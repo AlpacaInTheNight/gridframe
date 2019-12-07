@@ -1,0 +1,29 @@
+{
+ "name": "grid-frame",
+ "version": "1.0.0",
+ "description": "GridFrame",
+ "main": "dist/index.js",
+ "module": "dist/index.es.js",
+ "scripts": {
+  "test": "echo \"Error: no test specified\" && exit 1",
+  "build": "rollup -c",
+  "watch": "rollup -cw"
+ },
+ "author": {
+  "name": "Peter Efremov",
+  "email": "petroefremov2018@gmail.com"
+ },
+ "license": "MIT",
+ "devDependencies": {
+  "@types/react": "^16.9.15",
+  "rollup": "^1.27.4",
+  "rollup-plugin-typescript2": "^0.25.2",
+  "tslint": "^5.20.1",
+  "tslint-eslint-rules": "^5.4.0",
+  "typescript": "^3.7.2"
+ },
+ "dependencies": {
+  "react": "^16.12.0",
+  "resize-observer-polyfill": "^1.5.1"
+ }
+}

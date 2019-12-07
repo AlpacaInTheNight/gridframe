@@ -1,0 +1,86 @@
+
+const panelSize = 30;
+const borderColor = "black";
+const panelHeight = panelSize + "px";
+
+/**
+ * Бессмысленно и беспощадно
+ */
+const joinPNG = "url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADQAAAA0CAYAAADFeBvrAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoV2luZG93cykiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6MDY1REJFMUIwQjEzMTFFOTg4NTg4Njk3M0YzREVGRUQiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6MDY1REJFMUMwQjEzMTFFOTg4NTg4Njk3M0YzREVGRUQiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDowNjVEQkUxOTBCMTMxMUU5ODg1ODg2OTczRjNERUZFRCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDowNjVEQkUxQTBCMTMxMUU5ODg1ODg2OTczRjNERUZFRCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PmVsGaQAAADESURBVHja7NrLDoMwDERRxuL/f9ktXXTVIiWeBhddS+zI48RJlCCUmdudIrabBSBAgAABGg5JeTzVd8gQIECAAAECBMgb+/P4MVrmOK58LFS5zp/042t7zgyt+hCRK6dcdsM41lB2wrg2heyCeW0Kpg4NLdwJTK7MkCtTlkw7Qbq4/HvKyTCSMg5Kqf5okBlrfdEMU643GmJK9UdTzHQ7+8SB8ieYk35o5RriPgQIECBAgAAB+qMQ//oAAgQIEKAL4yHAACO0JW9gVjyHAAAAAElFTkSuQmCC')";
+const splitPNG = "url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADQAAAA0CAYAAADFeBvrAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoV2luZG93cykiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6MjA2Qjk2OTUwQjEzMTFFOUJBN0U4MjlGQUU5OEZEMzUiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6MjA2Qjk2OTYwQjEzMTFFOUJBN0U4MjlGQUU5OEZEMzUiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDoyMDZCOTY5MzBCMTMxMUU5QkE3RTgyOUZBRTk4RkQzNSIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDoyMDZCOTY5NDBCMTMxMUU5QkE3RTgyOUZBRTk4RkQzNSIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PoSBc4oAAADJSURBVHja7NrdDkAwDIZh3+L+b7myEAfYpiaovE0c+Zlnm6qFzGz4U6ThZwEIECBAgNwhyfLWewwjBAgQIECAAAG6N8alDCntz6WJPBe88klfad91T7nt1Djxq2HeKRdh5cTOgiItA1kLFHFNy3ZJoYHxInXnM+FNFCnwyBx2Suro1a+FtlNOhZHSUzfTMT1VSgqKOjK1tK2omNqLVRExreJU0TBrUqgUlI+gnAWt+B4CBAgQIECAAAGa6yL+9QEECBAgQC/GJMAAbPEobZMQ1WoAAAAASUVORK5CYII=')";
+const swapPNG = "url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADQAAAA0CAYAAADFeBvrAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoV2luZG93cykiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6QkZBRDcwN0MxMDEyMTFFOTk3MjA5RjU1RTVDRDQ1MDkiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6QkZBRDcwN0QxMDEyMTFFOTk3MjA5RjU1RTVDRDQ1MDkiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDpCRkFENzA3QTEwMTIxMUU5OTcyMDlGNTVFNUNENDUwOSIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDpCRkFENzA3QjEwMTIxMUU5OTcyMDlGNTVFNUNENDUwOSIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/Plkz14UAAADqSURBVHja7JlBDoMwDATZqv//8hahnioiSGI3CZpcEAQsRmuvsZDt7UnrtT1svXselhQq754te0idXc9XKBomKiYpV0qVChVOQ2AKAAEEEEB/s+1al2/Y18wKKfP+USmnJPgYoEL3731ZrWgKioSZxeUUBTOTbSsC5gjACL56Y82YTDNnr8cpRA0BBBBA9CH6EH2IGuqooYuJ1KVP/rvKf2P7bo1kKuSf49Ip54vzpYBceX1qIHfuN9daBpCD7xuqkIOVHGvbBWv2xT6NFSCAAAJomG1X953Gf0YoFAbUO7dkxWQEn319BBgArZlFZ5VBJxsAAAAASUVORK5CYII=')";
+
+export let styleGridArea: React.CSSProperties = {
+	display: "grid",
+	width: "100%",
+	height: "100%",
+	borderBottom: `1px solid ${borderColor}`,
+	borderLeft: `1px solid ${borderColor}`,
+	boxSizing: "border-box",
+};
+
+export let styleGridCell: React.CSSProperties = {
+	position: "relative",
+	display: "flex",
+	flexDirection: "column",
+	borderTop: `1px solid ${borderColor}`,
+	borderRight: `1px solid ${borderColor}`,
+	boxSizing: "border-box",
+};
+
+export let styleGridCellPanel: React.CSSProperties = {
+	display: "flex",
+	flexDirection: "row",
+	flexWrap: "wrap",
+	justifyContent: "space-between",
+	backgroundColor: "#777",
+	flexGrow: 0,
+};
+
+export let styleOverlay: React.CSSProperties = {
+	position: "absolute",
+	top: "0",
+	left: "0",
+	width: "100%",
+	height: "100%",
+	zIndex: 10,
+	opacity: 0.5
+};
+
+export let styleComponentSelector: React.CSSProperties = {
+	height: panelHeight,
+	width: panelHeight,
+	minWidth: panelHeight,
+	maxWidth: "200px",
+	flexGrow: 1,
+};
+
+export let styleButton: React.CSSProperties = {
+	width: panelHeight,
+	height: panelHeight,
+	cursor: "pointer",
+	transition: "0.2s filter",
+	display: "inline-block",
+	borderRadius: panelSize / 2 + "px",
+	backgroundSize: "80%",
+	backgroundRepeat: "no-repeat",
+	backgroundPosition: "center center",
+};
+
+export let styleSplit: React.CSSProperties = {
+	...styleButton,
+	backgroundColor: "rgb(212, 102, 102)",
+	backgroundImage: splitPNG,
+};
+
+export let styleJoin: React.CSSProperties = {
+	...styleButton,
+	backgroundColor: "rgb(74, 86, 189)",
+	backgroundImage: joinPNG,
+};
+
+export let styleSwap: React.CSSProperties = {
+	...styleButton,
+	backgroundColor: "rgb(84, 196, 102)",
+	backgroundImage: swapPNG,
+};
