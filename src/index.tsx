@@ -3,7 +3,7 @@ import { GridUtils } from "./GridContainer/GridUtils";
 import { GridElement } from "./GridContainer/GridElement";
 import { styleGridArea } from "./GridContainer/style";
 import { GridContext } from './GridContainer/GridContext';
-import { DNDEvent } from './events/grid';
+import GridEvents, { DNDEvent } from './events/grid';
 
 import ResizeObserver from 'resize-observer-polyfill';
 
@@ -75,6 +75,8 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 
 	private gridFrameContext: IGridFrame.ContextProps;
 
+	private events: GridEvents;
+
 	private workArea: IGridFrame.workArea = {
 		gridAreaId: "",
 		gridAreaClassName: "",
@@ -91,7 +93,7 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 		allowGridResize: true,
 	};
 
-	private dndEvent: DNDEvent = {
+	/* private dndEvent: DNDEvent = {
 		type: "inactive",
 		eventOriginPos: {
 			clientX: 0,
@@ -110,10 +112,12 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 		joinTargetElement: undefined,
 		targetOfDraggable: undefined,
 		madeDNDSnapshot: false
-	};
+	}; */
 
 	public constructor(props: GridFrameProps) {
 		super(props);
+
+		this.events = new GridEvents();
 
 		for(const componentId in props.components) {
 			if(props.components[componentId].default) {
@@ -352,13 +356,13 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 	}
 
 	private getDndEvent = () => {
-		return this.dndEvent;
+		return this.events.dndEvent;
 	}
 
 	private setDndEvent = (newDnDEvent: Partial<DNDEvent>) => {
 
 		for(const item in newDnDEvent) {
-			if(this.dndEvent.hasOwnProperty(item)) this.dndEvent[item] = newDnDEvent[item];
+			if(this.events.dndEvent.hasOwnProperty(item)) this.events.dndEvent[item] = newDnDEvent[item];
 		}
 	}
 
@@ -392,7 +396,7 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 
 	private renderGrid = () => {
 		const elements: JSX.Element[] = [];
-		this.dndEvent.joinTargetElement = undefined;
+		this.events.dndEvent.joinTargetElement = undefined;
 		const components = this.props.components ? {...this.props.components} : {};
 
 		if(this.props.config && this.props.config.allowSubGrid && !components[GridElement.SUBGRID_ID]) {
@@ -459,43 +463,43 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 	}
 
 	private onGridMouseUp = (e: React.MouseEvent) => {
-		if(this.dndEvent.type === "inactive") return;
+		if(this.events.dndEvent.type === "inactive") return;
 		const newState: GridFrameState = {} as GridFrameState;
 
-		if(this.dndEvent.type === "resize") {
+		if(this.events.dndEvent.type === "resize") {
 
 			const gridTemplate = this.state.gridTemplate;
-			gridTemplate.columns = this.dndEvent.columnsClone;
-			gridTemplate.rows = this.dndEvent.rowsClone;
+			gridTemplate.columns = this.events.dndEvent.columnsClone;
+			gridTemplate.rows = this.events.dndEvent.rowsClone;
 
 			newState.gridTemplate = gridTemplate;
 
-			this.dndEvent.currentContainer = undefined;
-			this.dndEvent.currentElement = undefined;
+			this.events.dndEvent.currentContainer = undefined;
+			this.events.dndEvent.currentElement = undefined;
 
-		} else if(this.dndEvent.type === "join" && this.dndEvent.joinTargetElement && this.dndEvent.currentElement) {
+		} else if(this.events.dndEvent.type === "join" && this.events.dndEvent.joinTargetElement && this.events.dndEvent.currentElement) {
 			let gridElements = this.state.gridElements;
-			const joinTargedId = this.dndEvent.joinTargetElement.id;
-			const joinTarged: IGridFrame.gridElement = this.dndEvent.joinTargetElement;
+			const joinTargedId = this.events.dndEvent.joinTargetElement.id;
+			const joinTarged: IGridFrame.gridElement = this.events.dndEvent.joinTargetElement;
 
 			//if joining splits the target - update its grid boundaries
-			if(GridUtils.canJointSplit(joinTarged, this.dndEvent.currentElement, this.state.joinDirection)) {
+			if(GridUtils.canJointSplit(joinTarged, this.events.dndEvent.currentElement, this.state.joinDirection)) {
 				switch(this.state.joinDirection) {
 					case "bottom":
 					case "top":
-						if(joinTarged.column.start < this.dndEvent.currentElement.column.start) {
-							joinTarged.column.end = this.dndEvent.currentElement.column.start;
+						if(joinTarged.column.start < this.events.dndEvent.currentElement.column.start) {
+							joinTarged.column.end = this.events.dndEvent.currentElement.column.start;
 						} else {
-							joinTarged.column.start = this.dndEvent.currentElement.column.end;
+							joinTarged.column.start = this.events.dndEvent.currentElement.column.end;
 						}
 						break;
 	
 					case "right":
 					case "left":
-						if(joinTarged.row.start < this.dndEvent.currentElement.row.start) {
-							joinTarged.row.end = this.dndEvent.currentElement.row.start;
+						if(joinTarged.row.start < this.events.dndEvent.currentElement.row.start) {
+							joinTarged.row.end = this.events.dndEvent.currentElement.row.start;
 						} else {
-							joinTarged.row.start = this.dndEvent.currentElement.row.end;
+							joinTarged.row.start = this.events.dndEvent.currentElement.row.end;
 						}
 						break;
 				}
@@ -507,25 +511,25 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 			//update joining source element to the new grid boundaries
 			switch(this.state.joinDirection) {
 				case "bottom":
-					this.dndEvent.currentElement.row.end = joinTarged.row.end;
+					this.events.dndEvent.currentElement.row.end = joinTarged.row.end;
 					break;
 
 				case "top":
-					this.dndEvent.currentElement.row.start = joinTarged.row.start;
+					this.events.dndEvent.currentElement.row.start = joinTarged.row.start;
 					break;
 
 				case "right":
-					this.dndEvent.currentElement.column.end = joinTarged.column.end;
+					this.events.dndEvent.currentElement.column.end = joinTarged.column.end;
 					break;
 
 				case "left":
-					this.dndEvent.currentElement.column.start = joinTarged.column.start;
+					this.events.dndEvent.currentElement.column.start = joinTarged.column.start;
 					break;
 			}
 
 			gridElements.some( element => {
-				if(element.id === (this.dndEvent.currentElement as IGridFrame.gridElement).id) {
-					element = this.dndEvent.currentElement as IGridFrame.gridElement;
+				if(element.id === (this.events.dndEvent.currentElement as IGridFrame.gridElement).id) {
+					element = this.events.dndEvent.currentElement as IGridFrame.gridElement;
 					return true;
 				}
 				return false;
@@ -545,21 +549,21 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 	private clearDNDState = (newState?: Partial<GridFrameState>) => {
 		if(!newState) newState = {};
 
-		this.dndEvent.lineHorizontal = false;
-		this.dndEvent.lineVertical = false;
+		this.events.dndEvent.lineHorizontal = false;
+		this.events.dndEvent.lineVertical = false;
 
-		this.dndEvent.joinTargetElement = undefined;
-		this.dndEvent.targetOfDraggable = undefined;
-		this.dndEvent.madeDNDSnapshot = false;
+		this.events.dndEvent.joinTargetElement = undefined;
+		this.events.dndEvent.targetOfDraggable = undefined;
+		this.events.dndEvent.madeDNDSnapshot = false;
 
-		this.dndEvent.type = "inactive";
+		this.events.dndEvent.type = "inactive";
 
 		if(this.state.dndActive) newState.dndActive = false;
 		if(this.state.joinDirection !== "none") newState.joinDirection = "none";
 
 		this.setState(newState as GridFrameState, () => {
-			if(this.dndEvent.currentContainer) {
-				this.dndEvent.currentContinerRect = this.dndEvent.currentContainer.getBoundingClientRect();
+			if(this.events.dndEvent.currentContainer) {
+				this.events.dndEvent.currentContinerRect = this.events.dndEvent.currentContainer.getBoundingClientRect();
 			}
 		});
 	}
@@ -613,30 +617,30 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 	private onGridMouseDown = (e: React.MouseEvent<HTMLElement>) => {
 		if(!this.workArea.allowGridResize) return;
 
-		if(this.dndEvent.lineHorizontal !== false || this.dndEvent.lineVertical !== false) {
+		if(this.events.dndEvent.lineHorizontal !== false || this.events.dndEvent.lineVertical !== false) {
 
 			const {clientX, clientY, pageX, pageY} = e;
 
-			this.dndEvent.eventOriginPos = {
+			this.events.dndEvent.eventOriginPos = {
 				clientX, clientY, pageX, pageY
 			};
 
-			this.dndEvent.type = "resize";
+			this.events.dndEvent.type = "resize";
 
 			this.setContainersActualSizes();
-			this.dndEvent.columnsClone = this.state.gridTemplate.columns.slice();
-			this.dndEvent.rowsClone = this.state.gridTemplate.rows.slice();
+			this.events.dndEvent.columnsClone = this.state.gridTemplate.columns.slice();
+			this.events.dndEvent.rowsClone = this.state.gridTemplate.rows.slice();
 
 			this.setState({dndActive: true});
 		}
 	}
 
 	private onCellSplit = (direction: IGridFrame.splitDirection) => {
-		if(!direction.isSplit || !this.dndEvent.currentElement) return;
+		if(!direction.isSplit || !this.events.dndEvent.currentElement) return;
 
 		const gridTemplate = this.state.gridTemplate;
 		const gridElements = this.state.gridElements;
-		const currentElement = this.dndEvent.currentElement;
+		const currentElement = this.events.dndEvent.currentElement;
 		const newElementAxis: {
 			column: IGridFrame.gridElementAxis;
 			row: IGridFrame.gridElementAxis;
@@ -781,25 +785,25 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 			return gridTemplate;
 		}
 
-		if(this.dndEvent.lineHorizontal !== false) {
-			const movedX = (clientX - this.dndEvent.eventOriginPos.clientX) * colFactor;
+		if(this.events.dndEvent.lineHorizontal !== false) {
+			const movedX = (clientX - this.events.dndEvent.eventOriginPos.clientX) * colFactor;
 
 			this.workArea.gridHTMLContainer.style.gridTemplateColumns = updateSize(
-				this.dndEvent.columnsClone,
+				this.events.dndEvent.columnsClone,
 				this.state.gridTemplate.columns,
 				movedX,
-				this.dndEvent.lineHorizontal
+				this.events.dndEvent.lineHorizontal
 			);
 		}
 
-		if(this.dndEvent.lineVertical !== false) {
-			const movedY = (clientY - this.dndEvent.eventOriginPos.clientY) * rowFactor;
+		if(this.events.dndEvent.lineVertical !== false) {
+			const movedY = (clientY - this.events.dndEvent.eventOriginPos.clientY) * rowFactor;
 
 			this.workArea.gridHTMLContainer.style.gridTemplateRows = updateSize(
-				this.dndEvent.rowsClone,
+				this.events.dndEvent.rowsClone,
 				this.state.gridTemplate.rows,
 				movedY,
-				this.dndEvent.lineVertical
+				this.events.dndEvent.lineVertical
 			);
 		}
 
@@ -809,20 +813,20 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 	private onDNDActiveMove = (e: React.MouseEvent<HTMLElement>) => {
 		const {pageX, pageY, clientX, clientY} = e;
 
-		if(this.dndEvent.type === "grabber") {
-			const direction = GridUtils.checkSplitDirection(pageX, pageY, this.dndEvent.eventOriginPos);
+		if(this.events.dndEvent.type === "grabber") {
+			const direction = GridUtils.checkSplitDirection(pageX, pageY, this.events.dndEvent.eventOriginPos);
 
 			this.onCellSplit(direction);
 		}
 
-		if(this.dndEvent.type === "join") {
-			const movedVertical = this.dndEvent.eventOriginPos.clientY - clientY;
-			const movedHorizontal = this.dndEvent.eventOriginPos.clientX - clientX;
+		if(this.events.dndEvent.type === "join") {
+			const movedVertical = this.events.dndEvent.eventOriginPos.clientY - clientY;
+			const movedHorizontal = this.events.dndEvent.eventOriginPos.clientX - clientX;
 			
 			this.setCellJoinDirection(movedVertical, movedHorizontal);
 		}
 
-		if(this.dndEvent.type === "resize") {
+		if(this.events.dndEvent.type === "resize") {
 			this.onCellResize(clientX, clientY);
 		}
 		
@@ -834,13 +838,13 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 		if(this.state.dndActive) {
 			this.onDNDActiveMove(e);
 		} else {
-			if(!this.dndEvent.currentContinerRect || !this.dndEvent.currentContainer || !this.dndEvent.currentElement) return;
+			if(!this.events.dndEvent.currentContinerRect || !this.events.dndEvent.currentContainer || !this.events.dndEvent.currentElement) return;
 			if(!this.workArea.allowGridResize) return;
 
 			if( (e.target as HTMLElement).dataset.grabber ) {
-				this.dndEvent.currentContainer.style.removeProperty("cursor");
-				this.dndEvent.lineHorizontal = false;
-				this.dndEvent.lineVertical = false;
+				this.events.dndEvent.currentContainer.style.removeProperty("cursor");
+				this.events.dndEvent.lineHorizontal = false;
+				this.events.dndEvent.lineVertical = false;
 				return;
 			}
 
@@ -848,14 +852,14 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 			const colMax = this.state.gridTemplate.columns.length + 1;
 			const rowMax = this.state.gridTemplate.rows.length + 1;
 
-			const colStart = this.dndEvent.currentElement.column.start - 1;
-			const rowStart = this.dndEvent.currentElement.row.start - 1;
+			const colStart = this.events.dndEvent.currentElement.column.start - 1;
+			const rowStart = this.events.dndEvent.currentElement.row.start - 1;
 
-			const colEnd = this.dndEvent.currentElement.column.end;
-			const rowEnd = this.dndEvent.currentElement.row.end;
+			const colEnd = this.events.dndEvent.currentElement.column.end;
+			const rowEnd = this.events.dndEvent.currentElement.row.end;
 
 			const spread = GridFrame.RESIZE_TRIGGER_DISTANCE;
-			const {left, top, width, height} = this.dndEvent.currentContinerRect;
+			const {left, top, width, height} = this.events.dndEvent.currentContinerRect;
 			let isHorizontalBorder: boolean = false;
 			let isVerticalBorder: boolean = false;
 			let isTop: boolean = false;
@@ -880,21 +884,21 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 			}
 
 			if(isHorizontalBorder && !isVerticalBorder) {
-				this.dndEvent.currentContainer.style.cursor = "ew-resize";
+				this.events.dndEvent.currentContainer.style.cursor = "ew-resize";
 
 			} else if(!isHorizontalBorder && isVerticalBorder) {
-				this.dndEvent.currentContainer.style.cursor = "ns-resize";
+				this.events.dndEvent.currentContainer.style.cursor = "ns-resize";
 
 			} else if(isHorizontalBorder && isVerticalBorder) {
 
 				if(isTop && isLeft || !isTop && !isLeft) {
-					this.dndEvent.currentContainer.style.cursor = "nwse-resize";
+					this.events.dndEvent.currentContainer.style.cursor = "nwse-resize";
 				} else {
-					this.dndEvent.currentContainer.style.cursor = "nesw-resize";
+					this.events.dndEvent.currentContainer.style.cursor = "nesw-resize";
 				}
 
 			} else {
-				this.dndEvent.currentContainer.style.removeProperty("cursor");
+				this.events.dndEvent.currentContainer.style.removeProperty("cursor");
 			}
 
 			//TODO: dont fire that if cursor is not near the border
@@ -904,7 +908,7 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 	}
 
 	private setDraggedGridLine = (isHorizontal: boolean, isVertical: boolean, isTop: boolean, isLeft: boolean) => {
-		const gridElement = this.dndEvent.currentElement;
+		const gridElement = this.events.dndEvent.currentElement;
 		if(!gridElement) return;
 
 		let lineHorizontal: number | false = false;
@@ -926,8 +930,8 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 			}
 		}
 
-		this.dndEvent.lineHorizontal = lineHorizontal;
-		this.dndEvent.lineVertical = lineVertical;
+		this.events.dndEvent.lineHorizontal = lineHorizontal;
+		this.events.dndEvent.lineVertical = lineVertical;
 	}
 
 	//TODO: make keybinding configurable

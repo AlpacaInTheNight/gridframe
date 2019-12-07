@@ -698,25 +698,9 @@ GridElement.DND_DATATRANSFER_TYPE = "gridframednd";
 //TODO: its not a constan. rename to snake case.
 GridElement.PREVENT_DND_PROPAGATION = false;
 
-class GridFrame extends Component {
-    constructor(props) {
-        super(props);
-        this.workArea = {
-            gridAreaId: "",
-            gridAreaClassName: "",
-            classPrefix: "",
-            gridHTMLElements: undefined,
-            gridHTMLContainer: undefined,
-            defaultComponent: false,
-            defaultAdaptiveObserve: {},
-            gridIdPrefix: GridFrame.DEFAULT_GRID_ID_PREFIX,
-            flexFactor: {
-                col: 1,
-                row: 1
-            },
-            allowGridResize: true,
-        };
-        this.dndEvent = {
+class GridEvents {
+    constructor() {
+        this._dndEvent = {
             type: "inactive",
             eventOriginPos: {
                 clientX: 0,
@@ -734,6 +718,217 @@ class GridFrame extends Component {
             joinTargetElement: undefined,
             targetOfDraggable: undefined,
             madeDNDSnapshot: false
+        };
+        this.setDndEvent = (newDnDEvent) => {
+            for (const item in newDnDEvent) {
+                if (this.dndEvent.hasOwnProperty(item))
+                    this.dndEvent[item] = newDnDEvent[item];
+            }
+        };
+        this.onUpdateGrid = ({ gridTemplate, gridElements, joinDirection }) => {
+            const { dndEvent } = this;
+            if (dndEvent.type === "inactive")
+                return false;
+            if (dndEvent.type === "resize") {
+                gridTemplate.columns = dndEvent.columnsClone;
+                gridTemplate.rows = dndEvent.rowsClone;
+                dndEvent.currentContainer = undefined;
+                dndEvent.currentElement = undefined;
+            }
+            else if (dndEvent.type === "join" && dndEvent.joinTargetElement && dndEvent.currentElement) {
+                const joinTargedId = dndEvent.joinTargetElement.id;
+                const joinTarged = dndEvent.joinTargetElement;
+                //if joining splits the target - update its grid boundaries
+                if (GridUtils.canJointSplit(joinTarged, dndEvent.currentElement, joinDirection)) {
+                    switch (joinDirection) {
+                        case "bottom":
+                        case "top":
+                            if (joinTarged.column.start < dndEvent.currentElement.column.start) {
+                                joinTarged.column.end = dndEvent.currentElement.column.start;
+                            }
+                            else {
+                                joinTarged.column.start = dndEvent.currentElement.column.end;
+                            }
+                            break;
+                        case "right":
+                        case "left":
+                            if (joinTarged.row.start < dndEvent.currentElement.row.start) {
+                                joinTarged.row.end = dndEvent.currentElement.row.start;
+                            }
+                            else {
+                                joinTarged.row.start = dndEvent.currentElement.row.end;
+                            }
+                            break;
+                    }
+                    //if joining replaces target - remove it from the grid
+                }
+                else {
+                    gridElements = gridElements.filter(element => element.id !== joinTargedId);
+                }
+                //update joining source element to the new grid boundaries
+                switch (joinDirection) {
+                    case "bottom":
+                        dndEvent.currentElement.row.end = joinTarged.row.end;
+                        break;
+                    case "top":
+                        dndEvent.currentElement.row.start = joinTarged.row.start;
+                        break;
+                    case "right":
+                        dndEvent.currentElement.column.end = joinTarged.column.end;
+                        break;
+                    case "left":
+                        dndEvent.currentElement.column.start = joinTarged.column.start;
+                        break;
+                }
+                gridElements.some(element => {
+                    if (element.id === dndEvent.currentElement.id) {
+                        element = dndEvent.currentElement;
+                        return true;
+                    }
+                    return false;
+                });
+                //const gridTemplate = this.normalizeGrid(gridElements);
+                gridTemplate = GridUtils.normalizeGrid(gridElements, gridTemplate, GridEvents.GRID_FR_SIZE);
+                return { gridTemplate, gridElements };
+            }
+            this.clearDNDEvent();
+            return false;
+        };
+        this.onGridMouseDown = ({ eventOriginPos, gridTemplate }) => {
+            const { lineHorizontal, lineVertical } = this.dndEvent;
+            if (lineHorizontal === false || lineVertical === false)
+                return;
+            this.dndEvent.eventOriginPos = eventOriginPos;
+            this.dndEvent.type = "resize";
+            this.dndEvent.columnsClone = gridTemplate.columns.slice();
+            this.dndEvent.rowsClone = gridTemplate.rows.slice();
+        };
+        this.onCellSplit = ({ direction, gridTemplate, gridElements }) => {
+            const { currentElement } = this.dndEvent;
+            if (!direction.isSplit || !currentElement)
+                return { gridTemplate, gridElements };
+            const newElementAxis = {
+                column: { start: 1, end: 1 },
+                row: { start: 1, end: 1 },
+            };
+            let nextId = 0;
+            gridElements.forEach(element => {
+                if (element.id >= nextId)
+                    nextId = element.id + 1;
+            });
+            function setNewElementAxis(originElement, newElement, axisA, id) {
+                const axisB = axisA === "column" ? "row" : "column";
+                newElement[axisB] = {
+                    start: originElement[axisB].start,
+                    end: originElement[axisB].end
+                };
+                //if addition of new line is not required
+                if (originElement[axisA].start + 1 !== originElement[axisA].end) {
+                    newElement[axisA] = {
+                        start: originElement[axisA].start + 1,
+                        end: originElement[axisA].end
+                    };
+                    gridElements.some(element => {
+                        if (element.id === originElement.id) {
+                            element[axisA].end = element[axisA].start + 1;
+                            return true;
+                        }
+                        return false;
+                    });
+                    //if a new grid line is required to make a split
+                }
+                else {
+                    const templateAxis = axisA === "column" ? gridTemplate.columns : gridTemplate.rows;
+                    const line = originElement[axisA].start - 1;
+                    const halfSize = templateAxis[line] /= 2;
+                    const elementId = originElement.id;
+                    const splitLineStart = originElement[axisA].start;
+                    templateAxis.splice(line, 0, halfSize);
+                    gridElements.forEach(element => {
+                        if (element[axisA].start > splitLineStart) {
+                            element[axisA].start += 1;
+                        }
+                        if (element[axisA].end > splitLineStart && element.id !== elementId) {
+                            element[axisA].end += 1;
+                        }
+                    });
+                    newElement[axisA] = {
+                        start: originElement[axisA].end,
+                        end: originElement[axisA].end + 1
+                    };
+                }
+            }
+            if (direction.isHorizontal) {
+                setNewElementAxis(currentElement, newElementAxis, "column", currentElement.id);
+            }
+            else {
+                setNewElementAxis(currentElement, newElementAxis, "row", currentElement.id);
+            }
+            gridElements.push({
+                column: newElementAxis.column,
+                row: newElementAxis.row,
+                id: nextId,
+                componentId: false,
+                props: {}
+            });
+            return { gridTemplate, gridElements };
+        };
+        this.clearDNDEvent = () => {
+            this.dndEvent.lineHorizontal = false;
+            this.dndEvent.lineVertical = false;
+            this.dndEvent.joinTargetElement = undefined;
+            this.dndEvent.targetOfDraggable = undefined;
+            this.dndEvent.madeDNDSnapshot = false;
+            this.dndEvent.type = "inactive";
+        };
+    }
+    get dndEvent() {
+        return this._dndEvent;
+    }
+}
+/**
+ * Default grid cell size in fr units
+ */
+GridEvents.GRID_FR_SIZE = 1000;
+GridEvents.GRID_MIN_SIZE = GridEvents.GRID_FR_SIZE * .025;
+
+class GridFrame extends Component {
+    /* private dndEvent: DNDEvent = {
+        type: "inactive",
+        eventOriginPos: {
+            clientX: 0,
+            clientY: 0,
+            pageX: 0,
+            pageY: 0
+        },
+        lineHorizontal: false,
+        lineVertical: false,
+        columnsClone: [],
+        rowsClone: [],
+
+        currentContinerRect: undefined,
+        currentContainer: undefined,
+        currentElement: undefined,
+        joinTargetElement: undefined,
+        targetOfDraggable: undefined,
+        madeDNDSnapshot: false
+    }; */
+    constructor(props) {
+        super(props);
+        this.workArea = {
+            gridAreaId: "",
+            gridAreaClassName: "",
+            classPrefix: "",
+            gridHTMLElements: undefined,
+            gridHTMLContainer: undefined,
+            defaultComponent: false,
+            defaultAdaptiveObserve: {},
+            gridIdPrefix: GridFrame.DEFAULT_GRID_ID_PREFIX,
+            flexFactor: {
+                col: 1,
+                row: 1
+            },
+            allowGridResize: true,
         };
         this.setContext = () => {
             this.gridFrameContext = {
@@ -789,12 +984,12 @@ class GridFrame extends Component {
             this.setState({ dndActive: newStatus });
         };
         this.getDndEvent = () => {
-            return this.dndEvent;
+            return this.events.dndEvent;
         };
         this.setDndEvent = (newDnDEvent) => {
             for (const item in newDnDEvent) {
-                if (this.dndEvent.hasOwnProperty(item))
-                    this.dndEvent[item] = newDnDEvent[item];
+                if (this.events.dndEvent.hasOwnProperty(item))
+                    this.events.dndEvent[item] = newDnDEvent[item];
             }
         };
         this.getWorkArea = () => {
@@ -820,7 +1015,7 @@ class GridFrame extends Component {
         };
         this.renderGrid = () => {
             const elements = [];
-            this.dndEvent.joinTargetElement = undefined;
+            this.events.dndEvent.joinTargetElement = undefined;
             const components = this.props.components ? Object.assign({}, this.props.components) : {};
             if (this.props.config && this.props.config.allowSubGrid && !components[GridElement.SUBGRID_ID]) {
                 const props = {
@@ -874,40 +1069,40 @@ class GridFrame extends Component {
             });
         };
         this.onGridMouseUp = (e) => {
-            if (this.dndEvent.type === "inactive")
+            if (this.events.dndEvent.type === "inactive")
                 return;
             const newState = {};
-            if (this.dndEvent.type === "resize") {
+            if (this.events.dndEvent.type === "resize") {
                 const gridTemplate = this.state.gridTemplate;
-                gridTemplate.columns = this.dndEvent.columnsClone;
-                gridTemplate.rows = this.dndEvent.rowsClone;
+                gridTemplate.columns = this.events.dndEvent.columnsClone;
+                gridTemplate.rows = this.events.dndEvent.rowsClone;
                 newState.gridTemplate = gridTemplate;
-                this.dndEvent.currentContainer = undefined;
-                this.dndEvent.currentElement = undefined;
+                this.events.dndEvent.currentContainer = undefined;
+                this.events.dndEvent.currentElement = undefined;
             }
-            else if (this.dndEvent.type === "join" && this.dndEvent.joinTargetElement && this.dndEvent.currentElement) {
+            else if (this.events.dndEvent.type === "join" && this.events.dndEvent.joinTargetElement && this.events.dndEvent.currentElement) {
                 let gridElements = this.state.gridElements;
-                const joinTargedId = this.dndEvent.joinTargetElement.id;
-                const joinTarged = this.dndEvent.joinTargetElement;
+                const joinTargedId = this.events.dndEvent.joinTargetElement.id;
+                const joinTarged = this.events.dndEvent.joinTargetElement;
                 //if joining splits the target - update its grid boundaries
-                if (GridUtils.canJointSplit(joinTarged, this.dndEvent.currentElement, this.state.joinDirection)) {
+                if (GridUtils.canJointSplit(joinTarged, this.events.dndEvent.currentElement, this.state.joinDirection)) {
                     switch (this.state.joinDirection) {
                         case "bottom":
                         case "top":
-                            if (joinTarged.column.start < this.dndEvent.currentElement.column.start) {
-                                joinTarged.column.end = this.dndEvent.currentElement.column.start;
+                            if (joinTarged.column.start < this.events.dndEvent.currentElement.column.start) {
+                                joinTarged.column.end = this.events.dndEvent.currentElement.column.start;
                             }
                             else {
-                                joinTarged.column.start = this.dndEvent.currentElement.column.end;
+                                joinTarged.column.start = this.events.dndEvent.currentElement.column.end;
                             }
                             break;
                         case "right":
                         case "left":
-                            if (joinTarged.row.start < this.dndEvent.currentElement.row.start) {
-                                joinTarged.row.end = this.dndEvent.currentElement.row.start;
+                            if (joinTarged.row.start < this.events.dndEvent.currentElement.row.start) {
+                                joinTarged.row.end = this.events.dndEvent.currentElement.row.start;
                             }
                             else {
-                                joinTarged.row.start = this.dndEvent.currentElement.row.end;
+                                joinTarged.row.start = this.events.dndEvent.currentElement.row.end;
                             }
                             break;
                     }
@@ -919,21 +1114,21 @@ class GridFrame extends Component {
                 //update joining source element to the new grid boundaries
                 switch (this.state.joinDirection) {
                     case "bottom":
-                        this.dndEvent.currentElement.row.end = joinTarged.row.end;
+                        this.events.dndEvent.currentElement.row.end = joinTarged.row.end;
                         break;
                     case "top":
-                        this.dndEvent.currentElement.row.start = joinTarged.row.start;
+                        this.events.dndEvent.currentElement.row.start = joinTarged.row.start;
                         break;
                     case "right":
-                        this.dndEvent.currentElement.column.end = joinTarged.column.end;
+                        this.events.dndEvent.currentElement.column.end = joinTarged.column.end;
                         break;
                     case "left":
-                        this.dndEvent.currentElement.column.start = joinTarged.column.start;
+                        this.events.dndEvent.currentElement.column.start = joinTarged.column.start;
                         break;
                 }
                 gridElements.some(element => {
-                    if (element.id === this.dndEvent.currentElement.id) {
-                        element = this.dndEvent.currentElement;
+                    if (element.id === this.events.dndEvent.currentElement.id) {
+                        element = this.events.dndEvent.currentElement;
                         return true;
                     }
                     return false;
@@ -949,19 +1144,19 @@ class GridFrame extends Component {
         this.clearDNDState = (newState) => {
             if (!newState)
                 newState = {};
-            this.dndEvent.lineHorizontal = false;
-            this.dndEvent.lineVertical = false;
-            this.dndEvent.joinTargetElement = undefined;
-            this.dndEvent.targetOfDraggable = undefined;
-            this.dndEvent.madeDNDSnapshot = false;
-            this.dndEvent.type = "inactive";
+            this.events.dndEvent.lineHorizontal = false;
+            this.events.dndEvent.lineVertical = false;
+            this.events.dndEvent.joinTargetElement = undefined;
+            this.events.dndEvent.targetOfDraggable = undefined;
+            this.events.dndEvent.madeDNDSnapshot = false;
+            this.events.dndEvent.type = "inactive";
             if (this.state.dndActive)
                 newState.dndActive = false;
             if (this.state.joinDirection !== "none")
                 newState.joinDirection = "none";
             this.setState(newState, () => {
-                if (this.dndEvent.currentContainer) {
-                    this.dndEvent.currentContinerRect = this.dndEvent.currentContainer.getBoundingClientRect();
+                if (this.events.dndEvent.currentContainer) {
+                    this.events.dndEvent.currentContinerRect = this.events.dndEvent.currentContainer.getBoundingClientRect();
                 }
             });
         };
@@ -1009,24 +1204,24 @@ class GridFrame extends Component {
         this.onGridMouseDown = (e) => {
             if (!this.workArea.allowGridResize)
                 return;
-            if (this.dndEvent.lineHorizontal !== false || this.dndEvent.lineVertical !== false) {
+            if (this.events.dndEvent.lineHorizontal !== false || this.events.dndEvent.lineVertical !== false) {
                 const { clientX, clientY, pageX, pageY } = e;
-                this.dndEvent.eventOriginPos = {
+                this.events.dndEvent.eventOriginPos = {
                     clientX, clientY, pageX, pageY
                 };
-                this.dndEvent.type = "resize";
+                this.events.dndEvent.type = "resize";
                 this.setContainersActualSizes();
-                this.dndEvent.columnsClone = this.state.gridTemplate.columns.slice();
-                this.dndEvent.rowsClone = this.state.gridTemplate.rows.slice();
+                this.events.dndEvent.columnsClone = this.state.gridTemplate.columns.slice();
+                this.events.dndEvent.rowsClone = this.state.gridTemplate.rows.slice();
                 this.setState({ dndActive: true });
             }
         };
         this.onCellSplit = (direction) => {
-            if (!direction.isSplit || !this.dndEvent.currentElement)
+            if (!direction.isSplit || !this.events.dndEvent.currentElement)
                 return;
             const gridTemplate = this.state.gridTemplate;
             const gridElements = this.state.gridElements;
-            const currentElement = this.dndEvent.currentElement;
+            const currentElement = this.events.dndEvent.currentElement;
             const newElementAxis = {
                 column: { start: 1, end: 1 },
                 row: { start: 1, end: 1 },
@@ -1127,28 +1322,28 @@ class GridFrame extends Component {
                 }
                 return gridTemplate;
             }
-            if (this.dndEvent.lineHorizontal !== false) {
-                const movedX = (clientX - this.dndEvent.eventOriginPos.clientX) * colFactor;
-                this.workArea.gridHTMLContainer.style.gridTemplateColumns = updateSize(this.dndEvent.columnsClone, this.state.gridTemplate.columns, movedX, this.dndEvent.lineHorizontal);
+            if (this.events.dndEvent.lineHorizontal !== false) {
+                const movedX = (clientX - this.events.dndEvent.eventOriginPos.clientX) * colFactor;
+                this.workArea.gridHTMLContainer.style.gridTemplateColumns = updateSize(this.events.dndEvent.columnsClone, this.state.gridTemplate.columns, movedX, this.events.dndEvent.lineHorizontal);
             }
-            if (this.dndEvent.lineVertical !== false) {
-                const movedY = (clientY - this.dndEvent.eventOriginPos.clientY) * rowFactor;
-                this.workArea.gridHTMLContainer.style.gridTemplateRows = updateSize(this.dndEvent.rowsClone, this.state.gridTemplate.rows, movedY, this.dndEvent.lineVertical);
+            if (this.events.dndEvent.lineVertical !== false) {
+                const movedY = (clientY - this.events.dndEvent.eventOriginPos.clientY) * rowFactor;
+                this.workArea.gridHTMLContainer.style.gridTemplateRows = updateSize(this.events.dndEvent.rowsClone, this.state.gridTemplate.rows, movedY, this.events.dndEvent.lineVertical);
             }
             this.checkContainersBreakpoints();
         };
         this.onDNDActiveMove = (e) => {
             const { pageX, pageY, clientX, clientY } = e;
-            if (this.dndEvent.type === "grabber") {
-                const direction = GridUtils.checkSplitDirection(pageX, pageY, this.dndEvent.eventOriginPos);
+            if (this.events.dndEvent.type === "grabber") {
+                const direction = GridUtils.checkSplitDirection(pageX, pageY, this.events.dndEvent.eventOriginPos);
                 this.onCellSplit(direction);
             }
-            if (this.dndEvent.type === "join") {
-                const movedVertical = this.dndEvent.eventOriginPos.clientY - clientY;
-                const movedHorizontal = this.dndEvent.eventOriginPos.clientX - clientX;
+            if (this.events.dndEvent.type === "join") {
+                const movedVertical = this.events.dndEvent.eventOriginPos.clientY - clientY;
+                const movedHorizontal = this.events.dndEvent.eventOriginPos.clientX - clientX;
                 this.setCellJoinDirection(movedVertical, movedHorizontal);
             }
-            if (this.dndEvent.type === "resize") {
+            if (this.events.dndEvent.type === "resize") {
                 this.onCellResize(clientX, clientY);
             }
         };
@@ -1158,25 +1353,25 @@ class GridFrame extends Component {
                 this.onDNDActiveMove(e);
             }
             else {
-                if (!this.dndEvent.currentContinerRect || !this.dndEvent.currentContainer || !this.dndEvent.currentElement)
+                if (!this.events.dndEvent.currentContinerRect || !this.events.dndEvent.currentContainer || !this.events.dndEvent.currentElement)
                     return;
                 if (!this.workArea.allowGridResize)
                     return;
                 if (e.target.dataset.grabber) {
-                    this.dndEvent.currentContainer.style.removeProperty("cursor");
-                    this.dndEvent.lineHorizontal = false;
-                    this.dndEvent.lineVertical = false;
+                    this.events.dndEvent.currentContainer.style.removeProperty("cursor");
+                    this.events.dndEvent.lineHorizontal = false;
+                    this.events.dndEvent.lineVertical = false;
                     return;
                 }
                 //const {col: containerCol, row: containerRow} = this.currentContainer.dataset;
                 const colMax = this.state.gridTemplate.columns.length + 1;
                 const rowMax = this.state.gridTemplate.rows.length + 1;
-                const colStart = this.dndEvent.currentElement.column.start - 1;
-                const rowStart = this.dndEvent.currentElement.row.start - 1;
-                const colEnd = this.dndEvent.currentElement.column.end;
-                const rowEnd = this.dndEvent.currentElement.row.end;
+                const colStart = this.events.dndEvent.currentElement.column.start - 1;
+                const rowStart = this.events.dndEvent.currentElement.row.start - 1;
+                const colEnd = this.events.dndEvent.currentElement.column.end;
+                const rowEnd = this.events.dndEvent.currentElement.row.end;
                 const spread = GridFrame.RESIZE_TRIGGER_DISTANCE;
-                const { left, top, width, height } = this.dndEvent.currentContinerRect;
+                const { left, top, width, height } = this.events.dndEvent.currentContinerRect;
                 let isHorizontalBorder = false;
                 let isVerticalBorder = false;
                 let isTop = false;
@@ -1196,28 +1391,28 @@ class GridFrame extends Component {
                     isVerticalBorder = true;
                 }
                 if (isHorizontalBorder && !isVerticalBorder) {
-                    this.dndEvent.currentContainer.style.cursor = "ew-resize";
+                    this.events.dndEvent.currentContainer.style.cursor = "ew-resize";
                 }
                 else if (!isHorizontalBorder && isVerticalBorder) {
-                    this.dndEvent.currentContainer.style.cursor = "ns-resize";
+                    this.events.dndEvent.currentContainer.style.cursor = "ns-resize";
                 }
                 else if (isHorizontalBorder && isVerticalBorder) {
                     if (isTop && isLeft || !isTop && !isLeft) {
-                        this.dndEvent.currentContainer.style.cursor = "nwse-resize";
+                        this.events.dndEvent.currentContainer.style.cursor = "nwse-resize";
                     }
                     else {
-                        this.dndEvent.currentContainer.style.cursor = "nesw-resize";
+                        this.events.dndEvent.currentContainer.style.cursor = "nesw-resize";
                     }
                 }
                 else {
-                    this.dndEvent.currentContainer.style.removeProperty("cursor");
+                    this.events.dndEvent.currentContainer.style.removeProperty("cursor");
                 }
                 //TODO: dont fire that if cursor is not near the border
                 this.setDraggedGridLine(isHorizontalBorder, isVerticalBorder, isTop, isLeft);
             }
         };
         this.setDraggedGridLine = (isHorizontal, isVertical, isTop, isLeft) => {
-            const gridElement = this.dndEvent.currentElement;
+            const gridElement = this.events.dndEvent.currentElement;
             if (!gridElement)
                 return;
             let lineHorizontal = false;
@@ -1238,8 +1433,8 @@ class GridFrame extends Component {
                     lineVertical = gridElement.row.end - 2;
                 }
             }
-            this.dndEvent.lineHorizontal = lineHorizontal;
-            this.dndEvent.lineVertical = lineVertical;
+            this.events.dndEvent.lineHorizontal = lineHorizontal;
+            this.events.dndEvent.lineVertical = lineVertical;
         };
         //TODO: make keybinding configurable
         this.onKeyUp = (e) => {
@@ -1278,6 +1473,7 @@ class GridFrame extends Component {
             }
             return gridAreaStyle;
         };
+        this.events = new GridEvents();
         for (const componentId in props.components) {
             if (props.components[componentId].default) {
                 this.workArea.defaultComponent = {

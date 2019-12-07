@@ -33,8 +33,8 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
     private static USED_IDS;
     private static EXEMPLARS;
     private gridFrameContext;
+    private events;
     private workArea;
-    private dndEvent;
     constructor(props: GridFrameProps);
     static getFrameTemplate: (frameId: string) => false | IGridFrame.gridTemplate;
     static getFrameElements: (frameId: string) => false | IGridFrame.gridElement[];
