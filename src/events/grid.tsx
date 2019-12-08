@@ -148,7 +148,7 @@ export default class GridEvents {
 			return {gridTemplate, gridElements};
 		}
 
-		this.clearDNDEvent();
+		//this.clearDNDEvent();
 		return false;
 	}
 
@@ -278,7 +278,7 @@ export default class GridEvents {
 		return {gridTemplate, gridElements};
 	}
 
-	private clearDNDEvent = () => {
+	/* private clearDNDEvent = () => {
 		this.dndEvent.lineHorizontal = false;
 		this.dndEvent.lineVertical = false;
 
@@ -287,5 +287,5 @@ export default class GridEvents {
 		this.dndEvent.madeDNDSnapshot = false;
 
 		this.dndEvent.type = "inactive";
-	}
+	} */
 }

@@ -791,7 +791,7 @@ class GridEvents {
                 gridTemplate = GridUtils.normalizeGrid(gridElements, gridTemplate, GridEvents.GRID_FR_SIZE);
                 return { gridTemplate, gridElements };
             }
-            this.clearDNDEvent();
+            //this.clearDNDEvent();
             return false;
         };
         this.onGridMouseDown = ({ eventOriginPos, gridTemplate }) => {
@@ -872,14 +872,6 @@ class GridEvents {
                 props: {}
             });
             return { gridTemplate, gridElements };
-        };
-        this.clearDNDEvent = () => {
-            this.dndEvent.lineHorizontal = false;
-            this.dndEvent.lineVertical = false;
-            this.dndEvent.joinTargetElement = undefined;
-            this.dndEvent.targetOfDraggable = undefined;
-            this.dndEvent.madeDNDSnapshot = false;
-            this.dndEvent.type = "inactive";
         };
     }
     get dndEvent() {
@@ -1071,75 +1063,10 @@ class GridFrame extends Component {
         this.onGridMouseUp = (e) => {
             if (this.events.dndEvent.type === "inactive")
                 return;
-            const newState = {};
-            if (this.events.dndEvent.type === "resize") {
-                const gridTemplate = this.state.gridTemplate;
-                gridTemplate.columns = this.events.dndEvent.columnsClone;
-                gridTemplate.rows = this.events.dndEvent.rowsClone;
-                newState.gridTemplate = gridTemplate;
-                this.events.dndEvent.currentContainer = undefined;
-                this.events.dndEvent.currentElement = undefined;
-            }
-            else if (this.events.dndEvent.type === "join" && this.events.dndEvent.joinTargetElement && this.events.dndEvent.currentElement) {
-                let gridElements = this.state.gridElements;
-                const joinTargedId = this.events.dndEvent.joinTargetElement.id;
-                const joinTarged = this.events.dndEvent.joinTargetElement;
-                //if joining splits the target - update its grid boundaries
-                if (GridUtils.canJointSplit(joinTarged, this.events.dndEvent.currentElement, this.state.joinDirection)) {
-                    switch (this.state.joinDirection) {
-                        case "bottom":
-                        case "top":
-                            if (joinTarged.column.start < this.events.dndEvent.currentElement.column.start) {
-                                joinTarged.column.end = this.events.dndEvent.currentElement.column.start;
-                            }
-                            else {
-                                joinTarged.column.start = this.events.dndEvent.currentElement.column.end;
-                            }
-                            break;
-                        case "right":
-                        case "left":
-                            if (joinTarged.row.start < this.events.dndEvent.currentElement.row.start) {
-                                joinTarged.row.end = this.events.dndEvent.currentElement.row.start;
-                            }
-                            else {
-                                joinTarged.row.start = this.events.dndEvent.currentElement.row.end;
-                            }
-                            break;
-                    }
-                    //if joining replaces target - remove it from the grid
-                }
-                else {
-                    gridElements = gridElements.filter(element => element.id !== joinTargedId);
-                }
-                //update joining source element to the new grid boundaries
-                switch (this.state.joinDirection) {
-                    case "bottom":
-                        this.events.dndEvent.currentElement.row.end = joinTarged.row.end;
-                        break;
-                    case "top":
-                        this.events.dndEvent.currentElement.row.start = joinTarged.row.start;
-                        break;
-                    case "right":
-                        this.events.dndEvent.currentElement.column.end = joinTarged.column.end;
-                        break;
-                    case "left":
-                        this.events.dndEvent.currentElement.column.start = joinTarged.column.start;
-                        break;
-                }
-                gridElements.some(element => {
-                    if (element.id === this.events.dndEvent.currentElement.id) {
-                        element = this.events.dndEvent.currentElement;
-                        return true;
-                    }
-                    return false;
-                });
-                //const gridTemplate = this.normalizeGrid(gridElements);
-                const gridTemplate = GridUtils.normalizeGrid(gridElements, this.state.gridTemplate, GridFrame.GRID_FR_SIZE);
-                newState.gridElements = gridElements;
-                newState.gridTemplate = gridTemplate;
-            }
+            const { joinDirection, gridElements, gridTemplate } = this.state;
+            const newGridState = this.events.onUpdateGrid({ joinDirection, gridElements, gridTemplate });
             this.onUpdateGrid();
-            this.clearDNDState(newState);
+            this.clearDNDState(newGridState);
         };
         this.clearDNDState = (newState) => {
             if (!newState)

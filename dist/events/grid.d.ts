@@ -42,5 +42,4 @@ export default class GridEvents {
         gridTemplate: IGridFrame.gridTemplate;
         gridElements: IGridFrame.gridElement[];
     };
-    private clearDNDEvent;
 }
