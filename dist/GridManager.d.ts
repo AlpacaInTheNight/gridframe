@@ -24,5 +24,6 @@ export default class GridManager {
     constructor(props: Props);
     get workArea(): TWorkArea;
     checkContainersBreakpoints: () => void;
+    setContainersActualSizes: (gridTemplate: IGridFrame.gridTemplate) => void;
 }
 export {};

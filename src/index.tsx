@@ -172,7 +172,7 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 	public componentDidMount() {
 		const {gridAreaId} = this.gridManager.workArea;
 		this.gridManager.workArea.gridHTMLContainer = document.getElementById(gridAreaId) || undefined;
-		this.setContainersActualSizes();
+		this.gridManager.setContainersActualSizes(this.state.gridTemplate);
 
 		this.updateGridElementsList();
 
@@ -398,20 +398,6 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 		});
 	}
 
-	//TODO: rewrite this. I not sure it is needed at current state.
-	private setContainersActualSizes = () => {
-		const {gridHTMLContainer} = this.gridManager.workArea;
-		if(!gridHTMLContainer) return;
-
-		const flexFactorHorizontal = this.state.gridTemplate.columns.reduce((a, b) => a + b, 0) / gridHTMLContainer.offsetWidth;
-		const flexFactorVertical = this.state.gridTemplate.rows.reduce((a, b) => a + b, 0) / gridHTMLContainer.offsetHeight;
-
-		this.gridManager.workArea.flexFactor = {
-			col: flexFactorHorizontal,
-			row: flexFactorVertical
-		};
-	}
-
 	private onGridMouseDown = (e: React.MouseEvent<HTMLElement>) => {
 		const {allowGridResize} = this.gridManager.workArea;
 		if(!allowGridResize) return;
@@ -426,7 +412,7 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 
 			this.events.dndEvent.type = "resize";
 
-			this.setContainersActualSizes();
+			this.gridManager.setContainersActualSizes(this.state.gridTemplate);
 			this.events.dndEvent.columnsClone = this.state.gridTemplate.columns.slice();
 			this.events.dndEvent.rowsClone = this.state.gridTemplate.rows.slice();
 

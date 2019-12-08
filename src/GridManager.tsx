@@ -103,4 +103,18 @@ export default class GridManager {
 			container.dataset.height = container.offsetHeight.toString();
 		});
 	}
+
+	//TODO: rewrite this. I not sure it is needed at current state.
+	public setContainersActualSizes = (gridTemplate: IGridFrame.gridTemplate) => {
+		const {gridHTMLContainer} = this.workArea;
+		if(!gridHTMLContainer) return;
+
+		const flexFactorHorizontal = gridTemplate.columns.reduce((a, b) => a + b, 0) / gridHTMLContainer.offsetWidth;
+		const flexFactorVertical = gridTemplate.rows.reduce((a, b) => a + b, 0) / gridHTMLContainer.offsetHeight;
+
+		this.workArea.flexFactor = {
+			col: flexFactorHorizontal,
+			row: flexFactorVertical
+		};
+	}
 }

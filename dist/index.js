@@ -735,6 +735,18 @@
 	                container.dataset.height = container.offsetHeight.toString();
 	            });
 	        };
+	        //TODO: rewrite this. I not sure it is needed at current state.
+	        this.setContainersActualSizes = (gridTemplate) => {
+	            const { gridHTMLContainer } = this.workArea;
+	            if (!gridHTMLContainer)
+	                return;
+	            const flexFactorHorizontal = gridTemplate.columns.reduce((a, b) => a + b, 0) / gridHTMLContainer.offsetWidth;
+	            const flexFactorVertical = gridTemplate.rows.reduce((a, b) => a + b, 0) / gridHTMLContainer.offsetHeight;
+	            this.workArea.flexFactor = {
+	                col: flexFactorHorizontal,
+	                row: flexFactorVertical
+	            };
+	        };
 	        const { config, components } = props;
 	        for (const componentId in components) {
 	            if (components[componentId].default) {
@@ -1245,18 +1257,6 @@
 	                }
 	            });
 	        };
-	        //TODO: rewrite this. I not sure it is needed at current state.
-	        this.setContainersActualSizes = () => {
-	            const { gridHTMLContainer } = this.gridManager.workArea;
-	            if (!gridHTMLContainer)
-	                return;
-	            const flexFactorHorizontal = this.state.gridTemplate.columns.reduce((a, b) => a + b, 0) / gridHTMLContainer.offsetWidth;
-	            const flexFactorVertical = this.state.gridTemplate.rows.reduce((a, b) => a + b, 0) / gridHTMLContainer.offsetHeight;
-	            this.gridManager.workArea.flexFactor = {
-	                col: flexFactorHorizontal,
-	                row: flexFactorVertical
-	            };
-	        };
 	        this.onGridMouseDown = (e) => {
 	            const { allowGridResize } = this.gridManager.workArea;
 	            if (!allowGridResize)
@@ -1267,7 +1267,7 @@
 	                    clientX, clientY, pageX, pageY
 	                };
 	                this.events.dndEvent.type = "resize";
-	                this.setContainersActualSizes();
+	                this.gridManager.setContainersActualSizes(this.state.gridTemplate);
 	                this.events.dndEvent.columnsClone = this.state.gridTemplate.columns.slice();
 	                this.events.dndEvent.rowsClone = this.state.gridTemplate.rows.slice();
 	                this.setState({ dndActive: true });
@@ -1404,7 +1404,7 @@
 	    componentDidMount() {
 	        const { gridAreaId } = this.gridManager.workArea;
 	        this.gridManager.workArea.gridHTMLContainer = document.getElementById(gridAreaId) || undefined;
-	        this.setContainersActualSizes();
+	        this.gridManager.setContainersActualSizes(this.state.gridTemplate);
 	        this.updateGridElementsList();
 	        const ro = new ResizeObserver((entries, observer) => {
 	            this.gridManager.checkContainersBreakpoints();
