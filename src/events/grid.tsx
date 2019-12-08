@@ -152,7 +152,7 @@ export default class GridEvents {
 		return false;
 	}
 
-	public onGridMouseDown = ({eventOriginPos, gridTemplate}: {
+	/* public onGridMouseDown = ({eventOriginPos, gridTemplate}: {
 		eventOriginPos: IGridFrame.eventOriginPos;
 		gridTemplate: IGridFrame.gridTemplate;
 	}) => {
@@ -163,7 +163,7 @@ export default class GridEvents {
 		this.dndEvent.type = "resize";
 		this.dndEvent.columnsClone = gridTemplate.columns.slice();
 		this.dndEvent.rowsClone = gridTemplate.rows.slice();
-	}
+	} */
 
 	public onCellSplit = ({direction, gridTemplate, gridElements}: {
 		direction: IGridFrame.splitDirection;

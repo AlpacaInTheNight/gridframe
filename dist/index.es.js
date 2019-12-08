@@ -794,15 +794,18 @@ class GridEvents {
             //this.clearDNDEvent();
             return false;
         };
-        this.onGridMouseDown = ({ eventOriginPos, gridTemplate }) => {
-            const { lineHorizontal, lineVertical } = this.dndEvent;
-            if (lineHorizontal === false || lineVertical === false)
-                return;
+        /* public onGridMouseDown = ({eventOriginPos, gridTemplate}: {
+            eventOriginPos: IGridFrame.eventOriginPos;
+            gridTemplate: IGridFrame.gridTemplate;
+        }) => {
+            const {lineHorizontal, lineVertical} = this.dndEvent;
+            if(lineHorizontal === false || lineVertical === false) return;
+    
             this.dndEvent.eventOriginPos = eventOriginPos;
             this.dndEvent.type = "resize";
             this.dndEvent.columnsClone = gridTemplate.columns.slice();
             this.dndEvent.rowsClone = gridTemplate.rows.slice();
-        };
+        } */
         this.onCellSplit = ({ direction, gridTemplate, gridElements }) => {
             const { currentElement } = this.dndEvent;
             if (!direction.isSplit || !currentElement)
@@ -1146,76 +1149,11 @@ class GridFrame extends Component {
         this.onCellSplit = (direction) => {
             if (!direction.isSplit || !this.events.dndEvent.currentElement)
                 return;
-            const gridTemplate = this.state.gridTemplate;
-            const gridElements = this.state.gridElements;
-            const currentElement = this.events.dndEvent.currentElement;
-            const newElementAxis = {
-                column: { start: 1, end: 1 },
-                row: { start: 1, end: 1 },
-            };
-            let nextId = 0;
-            gridElements.forEach(element => {
-                if (element.id >= nextId)
-                    nextId = element.id + 1;
+            const { gridTemplate, gridElements } = this.events.onCellSplit({
+                direction,
+                gridTemplate: this.state.gridTemplate,
+                gridElements: this.state.gridElements
             });
-            function setNewElementAxis(originElement, newElement, axisA, id) {
-                const axisB = axisA === "column" ? "row" : "column";
-                newElement[axisB] = {
-                    start: originElement[axisB].start,
-                    end: originElement[axisB].end
-                };
-                //if addition of new line is not required
-                if (originElement[axisA].start + 1 !== originElement[axisA].end) {
-                    console.log(1);
-                    newElement[axisA] = {
-                        start: originElement[axisA].start + 1,
-                        end: originElement[axisA].end
-                    };
-                    gridElements.some(element => {
-                        if (element.id === originElement.id) {
-                            element[axisA].end = element[axisA].start + 1;
-                            return true;
-                        }
-                        return false;
-                    });
-                    //if a new grid line is required to make a split
-                }
-                else {
-                    console.log(2);
-                    const templateAxis = axisA === "column" ? gridTemplate.columns : gridTemplate.rows;
-                    const line = originElement[axisA].start - 1;
-                    const halfSize = templateAxis[line] /= 2;
-                    const elementId = originElement.id;
-                    const splitLineStart = originElement[axisA].start;
-                    templateAxis.splice(line, 0, halfSize);
-                    gridElements.forEach(element => {
-                        if (element[axisA].start > splitLineStart) {
-                            element[axisA].start += 1;
-                        }
-                        if (element[axisA].end > splitLineStart && element.id !== elementId) {
-                            element[axisA].end += 1;
-                        }
-                    });
-                    newElement[axisA] = {
-                        start: originElement[axisA].end,
-                        end: originElement[axisA].end + 1
-                    };
-                }
-            }
-            if (direction.isHorizontal) {
-                setNewElementAxis(currentElement, newElementAxis, "column", currentElement.id);
-            }
-            else {
-                setNewElementAxis(currentElement, newElementAxis, "row", currentElement.id);
-            }
-            gridElements.push({
-                column: newElementAxis.column,
-                row: newElementAxis.row,
-                id: nextId,
-                componentId: false,
-                props: {}
-            });
-            console.log(gridTemplate, gridElements);
             this.setState({ dndActive: false, gridTemplate, gridElements });
         };
         this.setCellJoinDirection = (movedVertical, movedHorizontal) => {

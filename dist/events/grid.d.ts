@@ -30,10 +30,6 @@ export default class GridEvents {
         gridTemplate: IGridFrame.gridTemplate;
         gridElements: IGridFrame.gridElement[];
     };
-    onGridMouseDown: ({ eventOriginPos, gridTemplate }: {
-        eventOriginPos: IGridFrame.eventOriginPos;
-        gridTemplate: IGridFrame.gridTemplate;
-    }) => void;
     onCellSplit: ({ direction, gridTemplate, gridElements }: {
         direction: IGridFrame.splitDirection;
         gridTemplate: IGridFrame.gridTemplate;
