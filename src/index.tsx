@@ -1,11 +1,13 @@
 import * as React from "react";
+import ResizeObserver from 'resize-observer-polyfill';
+
 import { GridUtils } from "./GridContainer/GridUtils";
 import { GridElement } from "./GridContainer/GridElement";
 import { styleGridArea } from "./GridContainer/style";
 import { GridContext } from './GridContainer/GridContext';
-import GridEvents, { DNDEvent } from './events/grid';
 
-import ResizeObserver from 'resize-observer-polyfill';
+import GridManager from './GridManager';
+import GridEvents, { DNDEvent } from './events/grid';
 
 //import { bool, number, element } from "prop-types";
 //import { DNDManager } from "./DNDManager";
@@ -77,7 +79,9 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 
 	private events: GridEvents;
 
-	private workArea: IGridFrame.workArea = {
+	private gridManager: GridManager;
+
+	/* private workArea: IGridFrame.workArea = {
 		gridAreaId: "",
 		gridAreaClassName: "",
 		classPrefix: "",
@@ -91,51 +95,18 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 			row: 1
 		},
 		allowGridResize: true,
-	};
+	}; */
 
 	public constructor(props: GridFrameProps) {
 		super(props);
 
 		this.events = new GridEvents();
+		this.gridManager = new GridManager(props);
 
-		for(const componentId in props.components) {
-			if(props.components[componentId].default) {
-				this.workArea.defaultComponent = {
-					id: componentId,
-					container: props.components[componentId]
-				};
-				break;
-			}
-		}
-
-		if(props.config) {
-			if(props.config.idPrefix) {
-				this.workArea.gridIdPrefix = props.config.idPrefix;
-			}
-
-			if(props.config.classPrefix) {
-				this.workArea.classPrefix = props.config.classPrefix;
-			}
-
-			if(props.config.componentsDefaults && props.config.componentsDefaults.observe && props.config.componentsDefaults.observe.adaptive) {
-				this.workArea.defaultAdaptiveObserve = props.config.componentsDefaults.observe.adaptive;
-			}
-
-			if(props.config.lockGrid) {
-				this.workArea.allowGridResize = false;
-			}
-		}
-
-		if(this.props.config && this.props.config.gridAreaClassName) {
-			this.workArea.gridAreaClassName = this.props.config.gridAreaClassName;
-		} else {
-			this.workArea.gridAreaClassName = this.workArea.classPrefix + "gridArea";
-		}
-
-		this.workArea.gridAreaId = this.processGridId(this.props.gridId, this.workArea.gridIdPrefix);
+		this.gridManager.workArea.gridAreaId = this.processGridId(this.props.gridId, this.gridManager.workArea.gridIdPrefix);
 
 		GridFrame.EXEMPLARS.push({
-			id: this.workArea.gridAreaId,
+			id: this.gridManager.workArea.gridAreaId,
 			exemplar: this
 		});
 
@@ -214,18 +185,21 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 	};*/
 
 	public render() {
+		const {gridAreaClassName, classPrefix, gridAreaId} = this.gridManager.workArea;
+
+		//TODO: huh? should this be here?
 		this.setContext();
 
 		const gridContainerStyle: React.CSSProperties = this.getGridAreaStyle();
-		let className = this.workArea.gridAreaClassName;
+		let className = gridAreaClassName;
 		if(this.props.config && this.props.config.isSubGrid) {
-			className += " " + this.workArea.classPrefix + "frame_subgrid";
+			className += " " + classPrefix + "frame_subgrid";
 		}
 
 		return (
 			<GridContext.Provider value={this.gridFrameContext}>
 				<div
-					id={this.workArea.gridAreaId}
+					id={gridAreaId}
 					className={className}
 					style={gridContainerStyle}
 					onMouseDown={this.onGridMouseDown}
@@ -244,8 +218,8 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 	}
 
 	public componentDidMount() {
-		const {gridAreaId} = this.workArea;
-		this.workArea.gridHTMLContainer = document.getElementById(gridAreaId) || undefined;
+		const {gridAreaId} = this.gridManager.workArea;
+		this.gridManager.workArea.gridHTMLContainer = document.getElementById(gridAreaId) || undefined;
 		this.setContainersActualSizes();
 
 		this.updateGridElementsList();
@@ -254,7 +228,7 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 			this.checkContainersBreakpoints();
 		});
 
-		this.workArea.gridHTMLContainer && ro.observe(this.workArea.gridHTMLContainer);
+		this.gridManager.workArea.gridHTMLContainer && ro.observe(this.gridManager.workArea.gridHTMLContainer);
 
 		document.addEventListener("keyup", this.onKeyUp);
 	}
@@ -264,12 +238,13 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 	}
 
 	public componentWillUnmount() {
+		const {gridAreaId} = this.gridManager.workArea;
 		document.removeEventListener("keyup", this.onKeyUp);
 
-		GridFrame.USED_IDS = GridFrame.USED_IDS.filter(id => id !== this.workArea.gridAreaId);
+		GridFrame.USED_IDS = GridFrame.USED_IDS.filter(id => id !== gridAreaId);
 
 		//TODO: check that it is deleted correctly
-		GridFrame.EXEMPLARS = GridFrame.EXEMPLARS.filter(instance => instance.id !== this.workArea.gridAreaId);
+		GridFrame.EXEMPLARS = GridFrame.EXEMPLARS.filter(instance => instance.id !== gridAreaId);
 	}
 
 	private setContext = () => {
@@ -346,16 +321,13 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 	}
 
 	private getWorkArea = () => {
-		return this.workArea;
+		return this.gridManager.workArea;
 	}
 
 	private setWorkArea = (newWorkArea: Partial<IGridFrame.workArea>) => {
-
 		for(const item in newWorkArea) {
-			if(this.workArea.hasOwnProperty(item)) this.workArea[item] = newWorkArea[item];
+			if(this.gridManager.workArea.hasOwnProperty(item)) this.gridManager.workArea[item] = newWorkArea[item];
 		}
-
-		//this.workArea = newWorkArea;
 	}
 
 	private changeComponentId = (elementId: number, componentId: string | false) => {
@@ -374,13 +346,15 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 	}
 
 	private renderGrid = () => {
+		const {gridAreaId, defaultComponent, gridIdPrefix} = this.gridManager.workArea;
+
 		const elements: JSX.Element[] = [];
 		this.events.dndEvent.joinTargetElement = undefined;
 		const components = this.props.components ? {...this.props.components} : {};
 
 		if(this.props.config && this.props.config.allowSubGrid && !components[GridElement.SUBGRID_ID]) {
 			const props: Partial<GridFrameProps> = {
-				gridId: this.workArea.gridAreaId,
+				gridId: gridAreaId,
 				config: {
 					idPrefix: "sub",
 					customStyling: this.props.config.customStyling,
@@ -411,14 +385,14 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 			let component: IGridFrame.gridComponent | undefined = undefined;
 			if(element.componentId && this.props.components) {
 				component = this.props.components[element.componentId];
-			} else if(this.workArea.defaultComponent) {
-				component = this.workArea.defaultComponent.container;
+			} else if(defaultComponent) {
+				component = defaultComponent.container;
 			}
 			
 			//move this methods to contex api
 			elements.push(
 				<GridElement
-					key={`${this.workArea.gridIdPrefix}cell-${element.id}`}
+					key={`${gridIdPrefix}cell-${element.id}`}
 					element={element}
 					component={component}
 				/>
@@ -473,7 +447,9 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 	}
 
 	private checkContainersBreakpoints = () => {
-		this.workArea.gridHTMLElements && this.workArea.gridHTMLElements.forEach( (container: HTMLElement) => {
+		const {gridHTMLElements} = this.gridManager.workArea;
+
+		gridHTMLElements && gridHTMLElements.forEach( (container: HTMLElement) => {
 			if(container.offsetWidth <= 210) {
 				if(!container.classList.contains("slim")) {
 					container.classList.add("slim");
@@ -489,20 +465,21 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 
 	//TODO: rewrite this. I not sure it is needed at current state.
 	private setContainersActualSizes = () => {
-		const container = this.workArea.gridHTMLContainer;
-		if(!container) return;
+		const {gridHTMLContainer} = this.gridManager.workArea;
+		if(!gridHTMLContainer) return;
 
-		const flexFactorHorizontal = this.state.gridTemplate.columns.reduce((a, b) => a + b, 0) / container.offsetWidth;
-		const flexFactorVertical = this.state.gridTemplate.rows.reduce((a, b) => a + b, 0) / container.offsetHeight;
+		const flexFactorHorizontal = this.state.gridTemplate.columns.reduce((a, b) => a + b, 0) / gridHTMLContainer.offsetWidth;
+		const flexFactorVertical = this.state.gridTemplate.rows.reduce((a, b) => a + b, 0) / gridHTMLContainer.offsetHeight;
 
-		this.workArea.flexFactor = {
+		this.gridManager.workArea.flexFactor = {
 			col: flexFactorHorizontal,
 			row: flexFactorVertical
 		};
 	}
 
 	private onGridMouseDown = (e: React.MouseEvent<HTMLElement>) => {
-		if(!this.workArea.allowGridResize) return;
+		const {allowGridResize} = this.gridManager.workArea;
+		if(!allowGridResize) return;
 
 		if(this.events.dndEvent.lineHorizontal !== false || this.events.dndEvent.lineVertical !== false) {
 
@@ -548,8 +525,10 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 	}
 
 	private onCellResize = (clientX: number, clientY: number) => {
-		if(!this.workArea.gridHTMLContainer) return;
-		const {col: colFactor, row: rowFactor} = this.workArea.flexFactor;
+		const {gridHTMLContainer, flexFactor} = this.gridManager.workArea;
+
+		if(!gridHTMLContainer) return;
+		const {col: colFactor, row: rowFactor} = flexFactor;
 
 		function updateSize(cells: number[], cellsOrigin: number[], moved: number, lineNumber: number) {
 			let gridTemplate = "";
@@ -575,7 +554,7 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 		if(this.events.dndEvent.lineHorizontal !== false) {
 			const movedX = (clientX - this.events.dndEvent.eventOriginPos.clientX) * colFactor;
 
-			this.workArea.gridHTMLContainer.style.gridTemplateColumns = updateSize(
+			gridHTMLContainer.style.gridTemplateColumns = updateSize(
 				this.events.dndEvent.columnsClone,
 				this.state.gridTemplate.columns,
 				movedX,
@@ -586,7 +565,7 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 		if(this.events.dndEvent.lineVertical !== false) {
 			const movedY = (clientY - this.events.dndEvent.eventOriginPos.clientY) * rowFactor;
 
-			this.workArea.gridHTMLContainer.style.gridTemplateRows = updateSize(
+			gridHTMLContainer.style.gridTemplateRows = updateSize(
 				this.events.dndEvent.rowsClone,
 				this.state.gridTemplate.rows,
 				movedY,
@@ -620,12 +599,13 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 	}
 
 	private onGridMouseMove = (e: React.MouseEvent<HTMLElement>) => {
+		const {allowGridResize} = this.gridManager.workArea;
 
 		if(this.state.dndActive) {
 			this.onDNDActiveMove(e);
 		} else {
 			if(!this.events.dndEvent.currentContainerRect || !this.events.dndEvent.currentContainer || !this.events.dndEvent.currentElement) return;
-			if(!this.workArea.allowGridResize) return;
+			if(!allowGridResize) return;
 
 			if( (e.target as HTMLElement).dataset.grabber ) {
 				this.events.dndEvent.currentContainer.style.removeProperty("cursor");
@@ -643,6 +623,7 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 
 	//TODO: make keybinding configurable
 	private onKeyUp = (e: KeyboardEvent) => {
+		
 		if(e.keyCode === 73 && e.ctrlKey === true ) {
 			this.setState({
 				showPanel: !this.state.showPanel
@@ -650,15 +631,16 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 		}
 
 		if(e.keyCode === 81 && e.ctrlKey === true ) {
-			this.workArea.allowGridResize = !this.workArea.allowGridResize;
+			this.gridManager.workArea.allowGridResize = !this.gridManager.workArea.allowGridResize;
 		}
 	}
 
 	private updateGridElementsList = () => {
-		const {gridAreaId, classPrefix} = this.workArea;
-		if(this.workArea.gridHTMLContainer) {
+		const {gridAreaId, classPrefix, gridHTMLContainer} = this.gridManager.workArea;
+
+		if(gridHTMLContainer) {
 			const selector = `#${gridAreaId} > .${classPrefix}container`;
-			this.workArea.gridHTMLElements = document.querySelectorAll(selector);
+			this.gridManager.workArea.gridHTMLElements = document.querySelectorAll(selector);
 
 			this.checkContainersBreakpoints();
 		}

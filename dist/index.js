@@ -703,6 +703,60 @@
 	//TODO: its not a constan. rename to snake case.
 	GridElement.PREVENT_DND_PROPAGATION = false;
 
+	class GridManager {
+	    constructor(props) {
+	        this._workArea = {
+	            gridAreaId: "",
+	            gridAreaClassName: "",
+	            classPrefix: "",
+	            gridHTMLElements: undefined,
+	            gridHTMLContainer: undefined,
+	            defaultComponent: false,
+	            defaultAdaptiveObserve: {},
+	            gridIdPrefix: GridManager.DEFAULT_GRID_ID_PREFIX,
+	            flexFactor: {
+	                col: 1,
+	                row: 1
+	            },
+	            allowGridResize: true,
+	        };
+	        const { config, components } = props;
+	        for (const componentId in components) {
+	            if (components[componentId].default) {
+	                this.workArea.defaultComponent = {
+	                    id: componentId,
+	                    container: components[componentId]
+	                };
+	                break;
+	            }
+	        }
+	        if (config) {
+	            if (config.idPrefix) {
+	                this.workArea.gridIdPrefix = config.idPrefix;
+	            }
+	            if (config.classPrefix) {
+	                this.workArea.classPrefix = config.classPrefix;
+	            }
+	            if (config.componentsDefaults && config.componentsDefaults.observe && config.componentsDefaults.observe.adaptive) {
+	                this.workArea.defaultAdaptiveObserve = config.componentsDefaults.observe.adaptive;
+	            }
+	            if (config.lockGrid) {
+	                this.workArea.allowGridResize = false;
+	            }
+	        }
+	        if (config && config.gridAreaClassName) {
+	            this.workArea.gridAreaClassName = config.gridAreaClassName;
+	        }
+	        else {
+	            this.workArea.gridAreaClassName = this.workArea.classPrefix + "gridArea";
+	        }
+	    }
+	    get workArea() {
+	        return this._workArea;
+	    }
+	}
+	GridManager.DEFAULT_GRID_ID_PREFIX = "grid-";
+
 	class GridEvents {
 	    constructor() {
 	        this._dndEvent = {
@@ -979,23 +1033,23 @@
 	GridEvents.RESIZE_TRIGGER_DISTANCE = 30;
 
 	class GridFrame extends React.Component {
+	    /* private workArea: IGridFrame.workArea = {
+	        gridAreaId: "",
+	        gridAreaClassName: "",
+	        classPrefix: "",
+	        gridHTMLElements: undefined,
+	        gridHTMLContainer: undefined,
+	        defaultComponent: false,
+	        defaultAdaptiveObserve: {},
+	        gridIdPrefix: GridFrame.DEFAULT_GRID_ID_PREFIX,
+	        flexFactor: {
+	            col: 1,
+	            row: 1
+	        },
+	        allowGridResize: true,
+	    }; */
 	    constructor(props) {
 	        super(props);
-	        this.workArea = {
-	            gridAreaId: "",
-	            gridAreaClassName: "",
-	            classPrefix: "",
-	            gridHTMLElements: undefined,
-	            gridHTMLContainer: undefined,
-	            defaultComponent: false,
-	            defaultAdaptiveObserve: {},
-	            gridIdPrefix: GridFrame.DEFAULT_GRID_ID_PREFIX,
-	            flexFactor: {
-	                col: 1,
-	                row: 1
-	            },
-	            allowGridResize: true,
-	        };
 	        this.setContext = () => {
 	            this.gridFrameContext = {
 	                gridElements: this.state.gridElements,
@@ -1059,14 +1113,13 @@
 	            }
 	        };
 	        this.getWorkArea = () => {
-	            return this.workArea;
+	            return this.gridManager.workArea;
 	        };
 	        this.setWorkArea = (newWorkArea) => {
 	            for (const item in newWorkArea) {
-	                if (this.workArea.hasOwnProperty(item))
-	                    this.workArea[item] = newWorkArea[item];
+	                if (this.gridManager.workArea.hasOwnProperty(item))
+	                    this.gridManager.workArea[item] = newWorkArea[item];
 	            }
-	            //this.workArea = newWorkArea;
 	        };
 	        this.changeComponentId = (elementId, componentId) => {
 	            const gridElements = this.state.gridElements;
@@ -1080,12 +1133,13 @@
 	            this.setFrameElements(gridElements);
 	        };
 	        this.renderGrid = () => {
+	            const { gridAreaId, defaultComponent, gridIdPrefix } = this.gridManager.workArea;
 	            const elements = [];
 	            this.events.dndEvent.joinTargetElement = undefined;
 	            const components = this.props.components ? Object.assign({}, this.props.components) : {};
 	            if (this.props.config && this.props.config.allowSubGrid && !components[GridElement.SUBGRID_ID]) {
 	                const props = {
-	                    gridId: this.workArea.gridAreaId,
+	                    gridId: gridAreaId,
 	                    config: {
 	                        idPrefix: "sub",
 	                        customStyling: this.props.config.customStyling,
@@ -1115,11 +1169,11 @@
 	                if (element.componentId && this.props.components) {
 	                    component = this.props.components[element.componentId];
 	                }
-	                else if (this.workArea.defaultComponent) {
-	                    component = this.workArea.defaultComponent.container;
+	                else if (defaultComponent) {
+	                    component = defaultComponent.container;
 	                }
 	                //move this methods to contex api
-	                elements.push(React.createElement(GridElement, { key: `${this.workArea.gridIdPrefix}cell-${element.id}`, element: element, component: component }));
+	                elements.push(React.createElement(GridElement, { key: `${gridIdPrefix}cell-${element.id}`, element: element, component: component }));
 	            }
 	            return elements;
 	        };
@@ -1162,7 +1216,8 @@
 	            });
 	        };
 	        this.checkContainersBreakpoints = () => {
-	            this.workArea.gridHTMLElements && this.workArea.gridHTMLElements.forEach((container) => {
+	            const { gridHTMLElements } = this.gridManager.workArea;
+	            gridHTMLElements && gridHTMLElements.forEach((container) => {
 	                if (container.offsetWidth <= 210) {
 	                    if (!container.classList.contains("slim")) {
 	                        container.classList.add("slim");
@@ -1177,18 +1232,19 @@
 	        };
 	        //TODO: rewrite this. I not sure it is needed at current state.
 	        this.setContainersActualSizes = () => {
-	            const container = this.workArea.gridHTMLContainer;
-	            if (!container)
+	            const { gridHTMLContainer } = this.gridManager.workArea;
+	            if (!gridHTMLContainer)
 	                return;
-	            const flexFactorHorizontal = this.state.gridTemplate.columns.reduce((a, b) => a + b, 0) / container.offsetWidth;
-	            const flexFactorVertical = this.state.gridTemplate.rows.reduce((a, b) => a + b, 0) / container.offsetHeight;
-	            this.workArea.flexFactor = {
+	            const flexFactorHorizontal = this.state.gridTemplate.columns.reduce((a, b) => a + b, 0) / gridHTMLContainer.offsetWidth;
+	            const flexFactorVertical = this.state.gridTemplate.rows.reduce((a, b) => a + b, 0) / gridHTMLContainer.offsetHeight;
+	            this.gridManager.workArea.flexFactor = {
 	                col: flexFactorHorizontal,
 	                row: flexFactorVertical
 	            };
 	        };
 	        this.onGridMouseDown = (e) => {
-	            if (!this.workArea.allowGridResize)
+	            const { allowGridResize } = this.gridManager.workArea;
+	            if (!allowGridResize)
 	                return;
 	            if (this.events.dndEvent.lineHorizontal !== false || this.events.dndEvent.lineVertical !== false) {
 	                const { clientX, clientY, pageX, pageY } = e;
@@ -1225,9 +1281,10 @@
 	            }
 	        };
 	        this.onCellResize = (clientX, clientY) => {
-	            if (!this.workArea.gridHTMLContainer)
+	            const { gridHTMLContainer, flexFactor } = this.gridManager.workArea;
+	            if (!gridHTMLContainer)
 	                return;
-	            const { col: colFactor, row: rowFactor } = this.workArea.flexFactor;
+	            const { col: colFactor, row: rowFactor } = flexFactor;
 	            function updateSize(cells, cellsOrigin, moved, lineNumber) {
 	                let gridTemplate = "";
 	                const indexA = lineNumber;
@@ -1245,11 +1302,11 @@
 	            }
 	            if (this.events.dndEvent.lineHorizontal !== false) {
 	                const movedX = (clientX - this.events.dndEvent.eventOriginPos.clientX) * colFactor;
-	                this.workArea.gridHTMLContainer.style.gridTemplateColumns = updateSize(this.events.dndEvent.columnsClone, this.state.gridTemplate.columns, movedX, this.events.dndEvent.lineHorizontal);
+	                gridHTMLContainer.style.gridTemplateColumns = updateSize(this.events.dndEvent.columnsClone, this.state.gridTemplate.columns, movedX, this.events.dndEvent.lineHorizontal);
 	            }
 	            if (this.events.dndEvent.lineVertical !== false) {
 	                const movedY = (clientY - this.events.dndEvent.eventOriginPos.clientY) * rowFactor;
-	                this.workArea.gridHTMLContainer.style.gridTemplateRows = updateSize(this.events.dndEvent.rowsClone, this.state.gridTemplate.rows, movedY, this.events.dndEvent.lineVertical);
+	                gridHTMLContainer.style.gridTemplateRows = updateSize(this.events.dndEvent.rowsClone, this.state.gridTemplate.rows, movedY, this.events.dndEvent.lineVertical);
 	            }
 	            this.checkContainersBreakpoints();
 	        };
@@ -1269,13 +1326,14 @@
 	            }
 	        };
 	        this.onGridMouseMove = (e) => {
+	            const { allowGridResize } = this.gridManager.workArea;
 	            if (this.state.dndActive) {
 	                this.onDNDActiveMove(e);
 	            }
 	            else {
 	                if (!this.events.dndEvent.currentContainerRect || !this.events.dndEvent.currentContainer || !this.events.dndEvent.currentElement)
 	                    return;
-	                if (!this.workArea.allowGridResize)
+	                if (!allowGridResize)
 	                    return;
 	                if (e.target.dataset.grabber) {
 	                    this.events.dndEvent.currentContainer.style.removeProperty("cursor");
@@ -1296,14 +1354,14 @@
 	                });
 	            }
 	            if (e.keyCode === 81 && e.ctrlKey === true) {
-	                this.workArea.allowGridResize = !this.workArea.allowGridResize;
+	                this.gridManager.workArea.allowGridResize = !this.gridManager.workArea.allowGridResize;
 	            }
 	        };
 	        this.updateGridElementsList = () => {
-	            const { gridAreaId, classPrefix } = this.workArea;
-	            if (this.workArea.gridHTMLContainer) {
+	            const { gridAreaId, classPrefix, gridHTMLContainer } = this.gridManager.workArea;
+	            if (gridHTMLContainer) {
 	                const selector = `#${gridAreaId} > .${classPrefix}container`;
-	                this.workArea.gridHTMLElements = document.querySelectorAll(selector);
+	                this.gridManager.workArea.gridHTMLElements = document.querySelectorAll(selector);
 	                this.checkContainersBreakpoints();
 	            }
 	        };
@@ -1326,38 +1384,10 @@
 	            return gridAreaStyle;
 	        };
 	        this.events = new GridEvents();
-	        for (const componentId in props.components) {
-	            if (props.components[componentId].default) {
-	                this.workArea.defaultComponent = {
-	                    id: componentId,
-	                    container: props.components[componentId]
-	                };
-	                break;
-	            }
-	        }
-	        if (props.config) {
-	            if (props.config.idPrefix) {
-	                this.workArea.gridIdPrefix = props.config.idPrefix;
-	            }
-	            if (props.config.classPrefix) {
-	                this.workArea.classPrefix = props.config.classPrefix;
-	            }
-	            if (props.config.componentsDefaults && props.config.componentsDefaults.observe && props.config.componentsDefaults.observe.adaptive) {
-	                this.workArea.defaultAdaptiveObserve = props.config.componentsDefaults.observe.adaptive;
-	            }
-	            if (props.config.lockGrid) {
-	                this.workArea.allowGridResize = false;
-	            }
-	        }
-	        if (this.props.config && this.props.config.gridAreaClassName) {
-	            this.workArea.gridAreaClassName = this.props.config.gridAreaClassName;
-	        }
-	        else {
-	            this.workArea.gridAreaClassName = this.workArea.classPrefix + "gridArea";
-	        }
-	        this.workArea.gridAreaId = this.processGridId(this.props.gridId, this.workArea.gridIdPrefix);
+	        this.gridManager = new GridManager(props);
+	        this.gridManager.workArea.gridAreaId = this.processGridId(this.props.gridId, this.gridManager.workArea.gridIdPrefix);
 	        GridFrame.EXEMPLARS.push({
-	            id: this.workArea.gridAreaId,
+	            id: this.gridManager.workArea.gridAreaId,
 	            exemplar: this
 	        });
 	        this.state = {
@@ -1388,38 +1418,41 @@
 	        }
 	    };*/
 	    render() {
+	        const { gridAreaClassName, classPrefix, gridAreaId } = this.gridManager.workArea;
+	        //TODO: huh? should this be here?
 	        this.setContext();
 	        const gridContainerStyle = this.getGridAreaStyle();
-	        let className = this.workArea.gridAreaClassName;
+	        let className = gridAreaClassName;
 	        if (this.props.config && this.props.config.isSubGrid) {
-	            className += " " + this.workArea.classPrefix + "frame_subgrid";
+	            className += " " + classPrefix + "frame_subgrid";
 	        }
 	        return (React.createElement(GridContext.Provider, { value: this.gridFrameContext },
-	            React.createElement("div", { id: this.workArea.gridAreaId, className: className, style: gridContainerStyle, onMouseDown: this.onGridMouseDown, onMouseUp: this.onGridMouseUp, onMouseMove: this.onGridMouseMove }, this.renderGrid())));
+	            React.createElement("div", { id: gridAreaId, className: className, style: gridContainerStyle, onMouseDown: this.onGridMouseDown, onMouseUp: this.onGridMouseUp, onMouseMove: this.onGridMouseMove }, this.renderGrid())));
 	    }
 	    //TODO: remove this and add updation for the new props
 	    UNSAFE_componentWillUpdate(newProps, newState) {
 	        //console.log("Updating GridFrame");
 	    }
 	    componentDidMount() {
-	        const { gridAreaId } = this.workArea;
-	        this.workArea.gridHTMLContainer = document.getElementById(gridAreaId) || undefined;
+	        const { gridAreaId } = this.gridManager.workArea;
+	        this.gridManager.workArea.gridHTMLContainer = document.getElementById(gridAreaId) || undefined;
 	        this.setContainersActualSizes();
 	        this.updateGridElementsList();
 	        const ro = new ResizeObserver((entries, observer) => {
 	            this.checkContainersBreakpoints();
 	        });
-	        this.workArea.gridHTMLContainer && ro.observe(this.workArea.gridHTMLContainer);
+	        this.gridManager.workArea.gridHTMLContainer && ro.observe(this.gridManager.workArea.gridHTMLContainer);
 	        document.addEventListener("keyup", this.onKeyUp);
 	    }
 	    componentDidUpdate() {
 	        this.updateGridElementsList();
 	    }
 	    componentWillUnmount() {
+	        const { gridAreaId } = this.gridManager.workArea;
 	        document.removeEventListener("keyup", this.onKeyUp);
-	        GridFrame.USED_IDS = GridFrame.USED_IDS.filter(id => id !== this.workArea.gridAreaId);
+	        GridFrame.USED_IDS = GridFrame.USED_IDS.filter(id => id !== gridAreaId);
 	        //TODO: check that it is deleted correctly
-	        GridFrame.EXEMPLARS = GridFrame.EXEMPLARS.filter(instance => instance.id !== this.workArea.gridAreaId);
+	        GridFrame.EXEMPLARS = GridFrame.EXEMPLARS.filter(instance => instance.id !== gridAreaId);
 	    }
 	}
 	/**
