@@ -19,13 +19,6 @@ export interface GridFrameState {
     showPanel: boolean;
 }
 export default class GridFrame extends React.Component<Partial<GridFrameProps>, GridFrameState> {
-    /**
-     * Default grid cell size in fr units
-     */
-    private static readonly GRID_FR_SIZE;
-    private static readonly GRID_MIN_SIZE;
-    private static readonly RESIZE_TRIGGER_DISTANCE;
-    private static readonly DEFAULT_GRID_ID_PREFIX;
     private static defaultProps;
     /**
      * Array of the used ids. Used to make sure that no grid areas with the same ids would be created.
@@ -39,9 +32,6 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
     static getFrameTemplate: (frameId: string) => false | IGridFrame.gridTemplate;
     static getFrameElements: (frameId: string) => false | IGridFrame.gridElement[];
     private static setElementComponent;
-    /**
-     * in pixels
-     */
     render(): JSX.Element;
     UNSAFE_componentWillUpdate(newProps: GridFrameProps, newState: GridFrameState): void;
     componentDidMount(): void;

@@ -9,9 +9,6 @@ import { GridContext } from './GridContainer/GridContext';
 import GridManager from './GridManager';
 import GridEvents, { DNDEvent } from './events/grid';
 
-//import { bool, number, element } from "prop-types";
-//import { DNDManager } from "./DNDManager";
-
 export interface GridFrameUpdate {
 	template: IGridFrame.gridTemplate;
 	elements: IGridFrame.gridElement[];
@@ -38,16 +35,6 @@ export interface GridFrameState {
 }
 
 export default class GridFrame extends React.Component<Partial<GridFrameProps>, GridFrameState> {
-
-	/**
-	 * Default grid cell size in fr units
-	 */
-	private static readonly GRID_FR_SIZE = 1000;
-	private static readonly GRID_MIN_SIZE = GridFrame.GRID_FR_SIZE * .025;
-
-	//private static readonly DND_TRIGGER_DISTANCE = 40;
-	private static readonly RESIZE_TRIGGER_DISTANCE = 30;
-	private static readonly DEFAULT_GRID_ID_PREFIX = "grid-";
 
 	private static defaultProps: GridFrameProps = {
 		gridId: "main",
@@ -80,22 +67,6 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 	private events: GridEvents;
 
 	private gridManager: GridManager;
-
-	/* private workArea: IGridFrame.workArea = {
-		gridAreaId: "",
-		gridAreaClassName: "",
-		classPrefix: "",
-		gridHTMLElements: undefined,
-		gridHTMLContainer: undefined,
-		defaultComponent: false,
-		defaultAdaptiveObserve: {},
-		gridIdPrefix: GridFrame.DEFAULT_GRID_ID_PREFIX,
-		flexFactor: {
-			col: 1,
-			row: 1
-		},
-		allowGridResize: true,
-	}; */
 
 	public constructor(props: GridFrameProps) {
 		super(props);
@@ -164,25 +135,6 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 			return false;
 		});
 	}
-
-	/**
-	 * in pixels
-	 */
-	/*private containersActualSizes: {
-		columns: number[];
-		rows: number[];
-		flexFactor: {
-			col: number;
-			row: number;
-		}
-	} = {
-		columns: [],
-		rows: [],
-		flexFactor: {
-			col: 1,
-			row: 1
-		}
-	};*/
 
 	public render() {
 		const {gridAreaClassName, classPrefix, gridAreaId} = this.gridManager.workArea;
@@ -445,23 +397,6 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 			}
 		});
 	}
-
-	/* private checkContainersBreakpoints = () => {
-		const {gridHTMLElements} = this.gridManager.workArea;
-
-		gridHTMLElements && gridHTMLElements.forEach( (container: HTMLElement) => {
-			if(container.offsetWidth <= 210) {
-				if(!container.classList.contains("slim")) {
-					container.classList.add("slim");
-				}
-			} else if(container.classList.contains("slim")) {
-				container.classList.remove("slim");
-			}
-
-			container.dataset.width = container.offsetWidth.toString();
-			container.dataset.height = container.offsetHeight.toString();
-		});
-	} */
 
 	//TODO: rewrite this. I not sure it is needed at current state.
 	private setContainersActualSizes = () => {

@@ -1073,21 +1073,6 @@ GridEvents.GRID_MIN_SIZE = GridEvents.GRID_FR_SIZE * .025;
 GridEvents.RESIZE_TRIGGER_DISTANCE = 30;
 
 class GridFrame extends Component {
-    /* private workArea: IGridFrame.workArea = {
-        gridAreaId: "",
-        gridAreaClassName: "",
-        classPrefix: "",
-        gridHTMLElements: undefined,
-        gridHTMLContainer: undefined,
-        defaultComponent: false,
-        defaultAdaptiveObserve: {},
-        gridIdPrefix: GridFrame.DEFAULT_GRID_ID_PREFIX,
-        flexFactor: {
-            col: 1,
-            row: 1
-        },
-        allowGridResize: true,
-    }; */
     constructor(props) {
         super(props);
         this.setContext = () => {
@@ -1255,22 +1240,6 @@ class GridFrame extends Component {
                 }
             });
         };
-        /* private checkContainersBreakpoints = () => {
-            const {gridHTMLElements} = this.gridManager.workArea;
-    
-            gridHTMLElements && gridHTMLElements.forEach( (container: HTMLElement) => {
-                if(container.offsetWidth <= 210) {
-                    if(!container.classList.contains("slim")) {
-                        container.classList.add("slim");
-                    }
-                } else if(container.classList.contains("slim")) {
-                    container.classList.remove("slim");
-                }
-    
-                container.dataset.width = container.offsetWidth.toString();
-                container.dataset.height = container.offsetHeight.toString();
-            });
-        } */
         //TODO: rewrite this. I not sure it is needed at current state.
         this.setContainersActualSizes = () => {
             const { gridHTMLContainer } = this.gridManager.workArea;
@@ -1411,24 +1380,6 @@ class GridFrame extends Component {
         };
         this.setContext();
     }
-    /**
-     * in pixels
-     */
-    /*private containersActualSizes: {
-        columns: number[];
-        rows: number[];
-        flexFactor: {
-            col: number;
-            row: number;
-        }
-    } = {
-        columns: [],
-        rows: [],
-        flexFactor: {
-            col: 1,
-            row: 1
-        }
-    };*/
     render() {
         const { gridAreaClassName, classPrefix, gridAreaId } = this.gridManager.workArea;
         //TODO: huh? should this be here?
@@ -1467,14 +1418,6 @@ class GridFrame extends Component {
         GridFrame.EXEMPLARS = GridFrame.EXEMPLARS.filter(instance => instance.id !== gridAreaId);
     }
 }
-/**
- * Default grid cell size in fr units
- */
-GridFrame.GRID_FR_SIZE = 1000;
-GridFrame.GRID_MIN_SIZE = GridFrame.GRID_FR_SIZE * .025;
-//private static readonly DND_TRIGGER_DISTANCE = 40;
-GridFrame.RESIZE_TRIGGER_DISTANCE = 30;
-GridFrame.DEFAULT_GRID_ID_PREFIX = "grid-";
 GridFrame.defaultProps = {
     gridId: "main",
     template: { columns: [1000], rows: [1000] },
