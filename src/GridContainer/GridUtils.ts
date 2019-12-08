@@ -116,7 +116,6 @@ export class GridUtils {
 			else direction.isVertical = true;
 		}
 
-		//console.log(direction);
 		return direction;
 	}
 

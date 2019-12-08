@@ -146,28 +146,13 @@ export default class GridEvents {
 				return false;
 			});
 
-			//const gridTemplate = this.normalizeGrid(gridElements);
 			gridTemplate = GridUtils.normalizeGrid(gridElements, gridTemplate, GridEvents.GRID_FR_SIZE);
 
 			return {gridTemplate, gridElements};
 		}
 
-		//this.clearDNDEvent();
 		return false;
 	}
-
-	/* public onGridMouseDown = ({eventOriginPos, gridTemplate}: {
-		eventOriginPos: IGridFrame.eventOriginPos;
-		gridTemplate: IGridFrame.gridTemplate;
-	}) => {
-		const {lineHorizontal, lineVertical} = this.dndEvent;
-		if(lineHorizontal === false || lineVertical === false) return;
-
-		this.dndEvent.eventOriginPos = eventOriginPos;
-		this.dndEvent.type = "resize";
-		this.dndEvent.columnsClone = gridTemplate.columns.slice();
-		this.dndEvent.rowsClone = gridTemplate.rows.slice();
-	} */
 
 	public onCellSplit = ({direction, gridTemplate, gridElements}: {
 		direction: TSplitDirection;
@@ -399,17 +384,6 @@ export default class GridEvents {
 			);
 		}
 	}
-
-	/* private clearDNDEvent = () => {
-		this.dndEvent.lineHorizontal = false;
-		this.dndEvent.lineVertical = false;
-
-		this.dndEvent.joinTargetElement = undefined;
-		this.dndEvent.targetOfDraggable = undefined;
-		this.dndEvent.madeDNDSnapshot = false;
-
-		this.dndEvent.type = "inactive";
-	} */
 
 	private setDraggedGridLine = (isHorizontal: boolean, isVertical: boolean, isTop: boolean, isLeft: boolean) => {
 		const {currentElement} = this.dndEvent;

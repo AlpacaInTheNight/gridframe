@@ -91,7 +91,6 @@ GridUtils.checkSplitDirection = (pageX, pageY, eventOriginPos) => {
         else
             direction.isVertical = true;
     }
-    //console.log(direction);
     return direction;
 };
 /**
@@ -256,7 +255,6 @@ class GridContainer extends Component {
             if (!this.props.adaptiveObserve)
                 return;
             const { resizeTrackStep, breakpoints: watchBreakpoints, watchOrientation } = this.props.adaptiveObserve;
-            //const adaptiveObserve = this.props.adaptiveObserve;
             //TODO: replace this with ref in render
             const target = document.getElementById(this.props.htmlContainerId);
             this.target = target;
@@ -855,25 +853,11 @@ class GridEvents {
                     }
                     return false;
                 });
-                //const gridTemplate = this.normalizeGrid(gridElements);
                 gridTemplate = GridUtils.normalizeGrid(gridElements, gridTemplate, GridEvents.GRID_FR_SIZE);
                 return { gridTemplate, gridElements };
             }
-            //this.clearDNDEvent();
             return false;
         };
-        /* public onGridMouseDown = ({eventOriginPos, gridTemplate}: {
-            eventOriginPos: IGridFrame.eventOriginPos;
-            gridTemplate: IGridFrame.gridTemplate;
-        }) => {
-            const {lineHorizontal, lineVertical} = this.dndEvent;
-            if(lineHorizontal === false || lineVertical === false) return;
-    
-            this.dndEvent.eventOriginPos = eventOriginPos;
-            this.dndEvent.type = "resize";
-            this.dndEvent.columnsClone = gridTemplate.columns.slice();
-            this.dndEvent.rowsClone = gridTemplate.rows.slice();
-        } */
         this.onCellSplit = ({ direction, gridTemplate, gridElements }) => {
             const { currentElement } = this.dndEvent;
             if (!direction.isSplit || !currentElement)
@@ -1023,16 +1007,6 @@ class GridEvents {
                 gridHTMLContainer.style.gridTemplateRows = updateSize(this.dndEvent.rowsClone, gridTemplate.rows, movedY, this.dndEvent.lineVertical);
             }
         };
-        /* private clearDNDEvent = () => {
-            this.dndEvent.lineHorizontal = false;
-            this.dndEvent.lineVertical = false;
-    
-            this.dndEvent.joinTargetElement = undefined;
-            this.dndEvent.targetOfDraggable = undefined;
-            this.dndEvent.madeDNDSnapshot = false;
-    
-            this.dndEvent.type = "inactive";
-        } */
         this.setDraggedGridLine = (isHorizontal, isVertical, isTop, isLeft) => {
             const { currentElement } = this.dndEvent;
             if (!currentElement)

@@ -186,7 +186,6 @@ export class GridContainer extends React.Component<Props, State> {
 	private addObserver = () => {
 		if(!this.props.adaptiveObserve) return;
 		const {resizeTrackStep, breakpoints: watchBreakpoints, watchOrientation} = this.props.adaptiveObserve;
-		//const adaptiveObserve = this.props.adaptiveObserve;
 
 		//TODO: replace this with ref in render
 		const target = document.getElementById(this.props.htmlContainerId);
