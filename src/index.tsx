@@ -6,7 +6,7 @@ import { GridElement } from "./GridContainer/GridElement";
 import { styleGridArea } from "./GridContainer/style";
 import { GridContext } from './GridContainer/GridContext';
 
-import GridManager from './GridManager';
+import GridManager, { TWorkArea } from './GridManager';
 import GridEvents, { DNDEvent } from './events/grid';
 
 export interface GridFrameUpdate {
@@ -276,7 +276,7 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 		return this.gridManager.workArea;
 	}
 
-	private setWorkArea = (newWorkArea: Partial<IGridFrame.workArea>) => {
+	private setWorkArea = (newWorkArea: Partial<TWorkArea>) => {
 		for(const item in newWorkArea) {
 			if(this.gridManager.workArea.hasOwnProperty(item)) this.gridManager.workArea[item] = newWorkArea[item];
 		}

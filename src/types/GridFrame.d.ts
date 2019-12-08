@@ -123,26 +123,6 @@ declare namespace IGridFrame {
 		container: gridComponent;
 	}
 
-	interface flexFactor {
-		col: number;
-		row: number;
-	}
-
-	interface workArea {
-		gridIdPrefix: string;
-		gridAreaId: string;
-		gridAreaClassName: string;
-		classPrefix: string;
-		
-		gridHTMLElements: NodeListOf<HTMLElement> | undefined;
-		gridHTMLContainer: HTMLElement | undefined;
-		defaultComponent: defaultComponent | false;
-		defaultAdaptiveObserve: adaptiveObserve;
-		flexFactor: flexFactor;
-
-		allowGridResize: boolean;
-	}
-
 	interface dndTranserData {
 		gridId: string;
 		elementId: number;
