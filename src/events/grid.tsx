@@ -11,7 +11,7 @@ export type DNDEvent = {
 	columnsClone: number[];
 	rowsClone: number[];
 
-	currentContinerRect: DOMRect | ClientRect | undefined;
+	currentContainerRect: DOMRect | ClientRect | undefined;
 	currentContainer: HTMLElement | undefined;
 	currentElement: IGridFrame.gridElement | undefined;
 	joinTargetElement: IGridFrame.gridElement | undefined;
@@ -27,6 +27,7 @@ export default class GridEvents {
 	 */
 	private static readonly GRID_FR_SIZE = 1000;
 	private static readonly GRID_MIN_SIZE = GridEvents.GRID_FR_SIZE * .025;
+	private static readonly RESIZE_TRIGGER_DISTANCE = 30;
 
 	private _dndEvent: DNDEvent = {
 		type: "inactive",
@@ -41,7 +42,7 @@ export default class GridEvents {
 		columnsClone: [],
 		rowsClone: [],
 
-		currentContinerRect: undefined,
+		currentContainerRect: undefined,
 		currentContainer: undefined,
 		currentElement: undefined,
 		joinTargetElement: undefined,
@@ -278,6 +279,70 @@ export default class GridEvents {
 		return {gridTemplate, gridElements};
 	}
 
+	public onGridMouseMove = ({clientX, clientY, gridTemplate}: {
+		gridTemplate: IGridFrame.gridTemplate;
+		clientX: number;
+		clientY: number;
+	}) => {
+		if(!this.dndEvent.currentContainerRect || !this.dndEvent.currentContainer || !this.dndEvent.currentElement) return;
+
+		//const {col: containerCol, row: containerRow} = this.currentContainer.dataset;
+		const colMax = gridTemplate.columns.length + 1;
+		const rowMax = gridTemplate.rows.length + 1;
+
+		const colStart = this.dndEvent.currentElement.column.start - 1;
+		const rowStart = this.dndEvent.currentElement.row.start - 1;
+
+		const colEnd = this.dndEvent.currentElement.column.end;
+		const rowEnd = this.dndEvent.currentElement.row.end;
+
+		const spread = GridEvents.RESIZE_TRIGGER_DISTANCE;
+		const {left, top, width, height} = this.dndEvent.currentContainerRect;
+		let isHorizontalBorder: boolean = false;
+		let isVerticalBorder: boolean = false;
+		let isTop: boolean = false;
+		let isLeft: boolean = false;
+
+		if( colStart !== 0 && left + spread > clientX ) {
+			isHorizontalBorder = true;
+			isLeft = true;
+		}
+
+		if( colEnd !== colMax && left + width - spread < clientX ) {
+			isHorizontalBorder = true;
+		}
+
+		if( rowStart !== 0 && top + spread > clientY ) {
+			isVerticalBorder = true;
+			isTop = true;
+		}
+
+		if( rowEnd !== rowMax && top + height - spread < clientY ) {
+			isVerticalBorder = true;
+		}
+
+		if(isHorizontalBorder && !isVerticalBorder) {
+			this.dndEvent.currentContainer.style.cursor = "ew-resize";
+
+		} else if(!isHorizontalBorder && isVerticalBorder) {
+			this.dndEvent.currentContainer.style.cursor = "ns-resize";
+
+		} else if(isHorizontalBorder && isVerticalBorder) {
+
+			if(isTop && isLeft || !isTop && !isLeft) {
+				this.dndEvent.currentContainer.style.cursor = "nwse-resize";
+			} else {
+				this.dndEvent.currentContainer.style.cursor = "nesw-resize";
+			}
+
+		} else {
+			this.dndEvent.currentContainer.style.removeProperty("cursor");
+		}
+
+		//TODO: dont fire that if cursor is not near the border
+		this.setDraggedGridLine(isHorizontalBorder, isVerticalBorder, isTop, isLeft);
+	}
+
 	/* private clearDNDEvent = () => {
 		this.dndEvent.lineHorizontal = false;
 		this.dndEvent.lineVertical = false;
@@ -288,4 +353,31 @@ export default class GridEvents {
 
 		this.dndEvent.type = "inactive";
 	} */
+
+	private setDraggedGridLine = (isHorizontal: boolean, isVertical: boolean, isTop: boolean, isLeft: boolean) => {
+		const {currentElement} = this.dndEvent;
+		if(!currentElement) return;
+
+		let lineHorizontal: number | false = false;
+		let lineVertical: number | false = false;
+
+		if(isHorizontal) {
+			if(isLeft) {
+				lineHorizontal = currentElement.column.start - 2;
+			} else {
+				lineHorizontal = currentElement.column.end - 2;
+			}
+		}
+
+		if(isVertical) {
+			if(isTop) {
+				lineVertical = currentElement.row.start - 2;
+			} else {
+				lineVertical = currentElement.row.end - 2;
+			}
+		}
+
+		this.dndEvent.lineHorizontal = lineHorizontal;
+		this.dndEvent.lineVertical = lineVertical;
+	}
 }

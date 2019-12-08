@@ -60,7 +60,7 @@ export class GridElement extends React.Component<GridElementProps, GridElementSt
 			const elementId = Number(currentTarget.dataset.id);
 			
 			this.context.setDndEvent({
-				currentContinerRect: currentTarget.getBoundingClientRect(),
+				currentContainerRect: currentTarget.getBoundingClientRect(),
 				currentContainer: currentTarget
 			});
 
@@ -80,7 +80,7 @@ export class GridElement extends React.Component<GridElementProps, GridElementSt
 		const elementId = Number(currentTarget.dataset.id);
 		
 		this.context.setDndEvent({
-			currentContinerRect: currentTarget.getBoundingClientRect(),
+			currentContainerRect: currentTarget.getBoundingClientRect(),
 			currentContainer: currentTarget
 		});
 

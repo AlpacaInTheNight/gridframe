@@ -93,27 +93,6 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 		allowGridResize: true,
 	};
 
-	/* private dndEvent: DNDEvent = {
-		type: "inactive",
-		eventOriginPos: {
-			clientX: 0,
-			clientY: 0,
-			pageX: 0,
-			pageY: 0
-		},
-		lineHorizontal: false,
-		lineVertical: false,
-		columnsClone: [],
-		rowsClone: [],
-
-		currentContinerRect: undefined,
-		currentContainer: undefined,
-		currentElement: undefined,
-		joinTargetElement: undefined,
-		targetOfDraggable: undefined,
-		madeDNDSnapshot: false
-	}; */
-
 	public constructor(props: GridFrameProps) {
 		super(props);
 
@@ -488,7 +467,7 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 
 		this.setState(newState as GridFrameState, () => {
 			if(this.events.dndEvent.currentContainer) {
-				this.events.dndEvent.currentContinerRect = this.events.dndEvent.currentContainer.getBoundingClientRect();
+				this.events.dndEvent.currentContainerRect = this.events.dndEvent.currentContainer.getBoundingClientRect();
 			}
 		});
 	}
@@ -658,12 +637,11 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 	}
 
 	private onGridMouseMove = (e: React.MouseEvent<HTMLElement>) => {
-		const {clientX, clientY} = e;
-		
+
 		if(this.state.dndActive) {
 			this.onDNDActiveMove(e);
 		} else {
-			if(!this.events.dndEvent.currentContinerRect || !this.events.dndEvent.currentContainer || !this.events.dndEvent.currentElement) return;
+			if(!this.events.dndEvent.currentContainerRect || !this.events.dndEvent.currentContainer || !this.events.dndEvent.currentElement) return;
 			if(!this.workArea.allowGridResize) return;
 
 			if( (e.target as HTMLElement).dataset.grabber ) {
@@ -673,90 +651,11 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 				return;
 			}
 
-			//const {col: containerCol, row: containerRow} = this.currentContainer.dataset;
-			const colMax = this.state.gridTemplate.columns.length + 1;
-			const rowMax = this.state.gridTemplate.rows.length + 1;
-
-			const colStart = this.events.dndEvent.currentElement.column.start - 1;
-			const rowStart = this.events.dndEvent.currentElement.row.start - 1;
-
-			const colEnd = this.events.dndEvent.currentElement.column.end;
-			const rowEnd = this.events.dndEvent.currentElement.row.end;
-
-			const spread = GridFrame.RESIZE_TRIGGER_DISTANCE;
-			const {left, top, width, height} = this.events.dndEvent.currentContinerRect;
-			let isHorizontalBorder: boolean = false;
-			let isVerticalBorder: boolean = false;
-			let isTop: boolean = false;
-			let isLeft: boolean = false;
-
-			if( colStart !== 0 && left + spread > clientX ) {
-				isHorizontalBorder = true;
-				isLeft = true;
-			}
-
-			if( colEnd !== colMax && left + width - spread < clientX ) {
-				isHorizontalBorder = true;
-			}
-
-			if( rowStart !== 0 && top + spread > clientY ) {
-				isVerticalBorder = true;
-				isTop = true;
-			}
-
-			if( rowEnd !== rowMax && top + height - spread < clientY ) {
-				isVerticalBorder = true;
-			}
-
-			if(isHorizontalBorder && !isVerticalBorder) {
-				this.events.dndEvent.currentContainer.style.cursor = "ew-resize";
-
-			} else if(!isHorizontalBorder && isVerticalBorder) {
-				this.events.dndEvent.currentContainer.style.cursor = "ns-resize";
-
-			} else if(isHorizontalBorder && isVerticalBorder) {
-
-				if(isTop && isLeft || !isTop && !isLeft) {
-					this.events.dndEvent.currentContainer.style.cursor = "nwse-resize";
-				} else {
-					this.events.dndEvent.currentContainer.style.cursor = "nesw-resize";
-				}
-
-			} else {
-				this.events.dndEvent.currentContainer.style.removeProperty("cursor");
-			}
-
-			//TODO: dont fire that if cursor is not near the border
-			this.setDraggedGridLine(isHorizontalBorder, isVerticalBorder, isTop, isLeft);
+			const {clientX, clientY} = e;
+			const {gridTemplate} = this.state;
+			this.events.onGridMouseMove({clientX, clientY, gridTemplate});
 		}
 
-	}
-
-	private setDraggedGridLine = (isHorizontal: boolean, isVertical: boolean, isTop: boolean, isLeft: boolean) => {
-		const gridElement = this.events.dndEvent.currentElement;
-		if(!gridElement) return;
-
-		let lineHorizontal: number | false = false;
-		let lineVertical: number | false = false;
-
-		if(isHorizontal) {
-			if(isLeft) {
-				lineHorizontal = gridElement.column.start - 2;
-			} else {
-				lineHorizontal = gridElement.column.end - 2;
-			}
-		}
-
-		if(isVertical) {
-			if(isTop) {
-				lineVertical = gridElement.row.start - 2;
-			} else {
-				lineVertical = gridElement.row.end - 2;
-			}
-		}
-
-		this.events.dndEvent.lineHorizontal = lineHorizontal;
-		this.events.dndEvent.lineVertical = lineVertical;
 	}
 
 	//TODO: make keybinding configurable

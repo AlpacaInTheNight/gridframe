@@ -5,7 +5,7 @@ export declare type DNDEvent = {
     lineVertical: number | false;
     columnsClone: number[];
     rowsClone: number[];
-    currentContinerRect: DOMRect | ClientRect | undefined;
+    currentContainerRect: DOMRect | ClientRect | undefined;
     currentContainer: HTMLElement | undefined;
     currentElement: IGridFrame.gridElement | undefined;
     joinTargetElement: IGridFrame.gridElement | undefined;
@@ -18,6 +18,7 @@ export default class GridEvents {
      */
     private static readonly GRID_FR_SIZE;
     private static readonly GRID_MIN_SIZE;
+    private static readonly RESIZE_TRIGGER_DISTANCE;
     private _dndEvent;
     constructor();
     get dndEvent(): DNDEvent;
@@ -38,4 +39,10 @@ export default class GridEvents {
         gridTemplate: IGridFrame.gridTemplate;
         gridElements: IGridFrame.gridElement[];
     };
+    onGridMouseMove: ({ clientX, clientY, gridTemplate }: {
+        gridTemplate: IGridFrame.gridTemplate;
+        clientX: number;
+        clientY: number;
+    }) => void;
+    private setDraggedGridLine;
 }

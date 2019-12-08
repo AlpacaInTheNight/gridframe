@@ -465,7 +465,7 @@ class GridElement extends Component {
                 const currentTarget = e.currentTarget;
                 const elementId = Number(currentTarget.dataset.id);
                 this.context.setDndEvent({
-                    currentContinerRect: currentTarget.getBoundingClientRect(),
+                    currentContainerRect: currentTarget.getBoundingClientRect(),
                     currentContainer: currentTarget
                 });
                 if (Number.isInteger(elementId)) {
@@ -482,7 +482,7 @@ class GridElement extends Component {
             const currentTarget = e.currentTarget;
             const elementId = Number(currentTarget.dataset.id);
             this.context.setDndEvent({
-                currentContinerRect: currentTarget.getBoundingClientRect(),
+                currentContainerRect: currentTarget.getBoundingClientRect(),
                 currentContainer: currentTarget
             });
             if (Number.isInteger(elementId)) {
@@ -712,7 +712,7 @@ class GridEvents {
             lineVertical: false,
             columnsClone: [],
             rowsClone: [],
-            currentContinerRect: undefined,
+            currentContainerRect: undefined,
             currentContainer: undefined,
             currentElement: undefined,
             joinTargetElement: undefined,
@@ -876,6 +876,91 @@ class GridEvents {
             });
             return { gridTemplate, gridElements };
         };
+        this.onGridMouseMove = ({ clientX, clientY, gridTemplate }) => {
+            if (!this.dndEvent.currentContainerRect || !this.dndEvent.currentContainer || !this.dndEvent.currentElement)
+                return;
+            //const {col: containerCol, row: containerRow} = this.currentContainer.dataset;
+            const colMax = gridTemplate.columns.length + 1;
+            const rowMax = gridTemplate.rows.length + 1;
+            const colStart = this.dndEvent.currentElement.column.start - 1;
+            const rowStart = this.dndEvent.currentElement.row.start - 1;
+            const colEnd = this.dndEvent.currentElement.column.end;
+            const rowEnd = this.dndEvent.currentElement.row.end;
+            const spread = GridEvents.RESIZE_TRIGGER_DISTANCE;
+            const { left, top, width, height } = this.dndEvent.currentContainerRect;
+            let isHorizontalBorder = false;
+            let isVerticalBorder = false;
+            let isTop = false;
+            let isLeft = false;
+            if (colStart !== 0 && left + spread > clientX) {
+                isHorizontalBorder = true;
+                isLeft = true;
+            }
+            if (colEnd !== colMax && left + width - spread < clientX) {
+                isHorizontalBorder = true;
+            }
+            if (rowStart !== 0 && top + spread > clientY) {
+                isVerticalBorder = true;
+                isTop = true;
+            }
+            if (rowEnd !== rowMax && top + height - spread < clientY) {
+                isVerticalBorder = true;
+            }
+            if (isHorizontalBorder && !isVerticalBorder) {
+                this.dndEvent.currentContainer.style.cursor = "ew-resize";
+            }
+            else if (!isHorizontalBorder && isVerticalBorder) {
+                this.dndEvent.currentContainer.style.cursor = "ns-resize";
+            }
+            else if (isHorizontalBorder && isVerticalBorder) {
+                if (isTop && isLeft || !isTop && !isLeft) {
+                    this.dndEvent.currentContainer.style.cursor = "nwse-resize";
+                }
+                else {
+                    this.dndEvent.currentContainer.style.cursor = "nesw-resize";
+                }
+            }
+            else {
+                this.dndEvent.currentContainer.style.removeProperty("cursor");
+            }
+            //TODO: dont fire that if cursor is not near the border
+            this.setDraggedGridLine(isHorizontalBorder, isVerticalBorder, isTop, isLeft);
+        };
+        /* private clearDNDEvent = () => {
+            this.dndEvent.lineHorizontal = false;
+            this.dndEvent.lineVertical = false;
+    
+            this.dndEvent.joinTargetElement = undefined;
+            this.dndEvent.targetOfDraggable = undefined;
+            this.dndEvent.madeDNDSnapshot = false;
+    
+            this.dndEvent.type = "inactive";
+        } */
+        this.setDraggedGridLine = (isHorizontal, isVertical, isTop, isLeft) => {
+            const { currentElement } = this.dndEvent;
+            if (!currentElement)
+                return;
+            let lineHorizontal = false;
+            let lineVertical = false;
+            if (isHorizontal) {
+                if (isLeft) {
+                    lineHorizontal = currentElement.column.start - 2;
+                }
+                else {
+                    lineHorizontal = currentElement.column.end - 2;
+                }
+            }
+            if (isVertical) {
+                if (isTop) {
+                    lineVertical = currentElement.row.start - 2;
+                }
+                else {
+                    lineVertical = currentElement.row.end - 2;
+                }
+            }
+            this.dndEvent.lineHorizontal = lineHorizontal;
+            this.dndEvent.lineVertical = lineVertical;
+        };
     }
     get dndEvent() {
         return this._dndEvent;
@@ -886,28 +971,9 @@ class GridEvents {
  */
 GridEvents.GRID_FR_SIZE = 1000;
 GridEvents.GRID_MIN_SIZE = GridEvents.GRID_FR_SIZE * .025;
+GridEvents.RESIZE_TRIGGER_DISTANCE = 30;
 
 class GridFrame extends Component {
-    /* private dndEvent: DNDEvent = {
-        type: "inactive",
-        eventOriginPos: {
-            clientX: 0,
-            clientY: 0,
-            pageX: 0,
-            pageY: 0
-        },
-        lineHorizontal: false,
-        lineVertical: false,
-        columnsClone: [],
-        rowsClone: [],
-
-        currentContinerRect: undefined,
-        currentContainer: undefined,
-        currentElement: undefined,
-        joinTargetElement: undefined,
-        targetOfDraggable: undefined,
-        madeDNDSnapshot: false
-    }; */
     constructor(props) {
         super(props);
         this.workArea = {
@@ -1086,7 +1152,7 @@ class GridFrame extends Component {
                 newState.joinDirection = "none";
             this.setState(newState, () => {
                 if (this.events.dndEvent.currentContainer) {
-                    this.events.dndEvent.currentContinerRect = this.events.dndEvent.currentContainer.getBoundingClientRect();
+                    this.events.dndEvent.currentContainerRect = this.events.dndEvent.currentContainer.getBoundingClientRect();
                 }
             });
         };
@@ -1213,12 +1279,11 @@ class GridFrame extends Component {
             }
         };
         this.onGridMouseMove = (e) => {
-            const { clientX, clientY } = e;
             if (this.state.dndActive) {
                 this.onDNDActiveMove(e);
             }
             else {
-                if (!this.events.dndEvent.currentContinerRect || !this.events.dndEvent.currentContainer || !this.events.dndEvent.currentElement)
+                if (!this.events.dndEvent.currentContainerRect || !this.events.dndEvent.currentContainer || !this.events.dndEvent.currentElement)
                     return;
                 if (!this.workArea.allowGridResize)
                     return;
@@ -1228,78 +1293,10 @@ class GridFrame extends Component {
                     this.events.dndEvent.lineVertical = false;
                     return;
                 }
-                //const {col: containerCol, row: containerRow} = this.currentContainer.dataset;
-                const colMax = this.state.gridTemplate.columns.length + 1;
-                const rowMax = this.state.gridTemplate.rows.length + 1;
-                const colStart = this.events.dndEvent.currentElement.column.start - 1;
-                const rowStart = this.events.dndEvent.currentElement.row.start - 1;
-                const colEnd = this.events.dndEvent.currentElement.column.end;
-                const rowEnd = this.events.dndEvent.currentElement.row.end;
-                const spread = GridFrame.RESIZE_TRIGGER_DISTANCE;
-                const { left, top, width, height } = this.events.dndEvent.currentContinerRect;
-                let isHorizontalBorder = false;
-                let isVerticalBorder = false;
-                let isTop = false;
-                let isLeft = false;
-                if (colStart !== 0 && left + spread > clientX) {
-                    isHorizontalBorder = true;
-                    isLeft = true;
-                }
-                if (colEnd !== colMax && left + width - spread < clientX) {
-                    isHorizontalBorder = true;
-                }
-                if (rowStart !== 0 && top + spread > clientY) {
-                    isVerticalBorder = true;
-                    isTop = true;
-                }
-                if (rowEnd !== rowMax && top + height - spread < clientY) {
-                    isVerticalBorder = true;
-                }
-                if (isHorizontalBorder && !isVerticalBorder) {
-                    this.events.dndEvent.currentContainer.style.cursor = "ew-resize";
-                }
-                else if (!isHorizontalBorder && isVerticalBorder) {
-                    this.events.dndEvent.currentContainer.style.cursor = "ns-resize";
-                }
-                else if (isHorizontalBorder && isVerticalBorder) {
-                    if (isTop && isLeft || !isTop && !isLeft) {
-                        this.events.dndEvent.currentContainer.style.cursor = "nwse-resize";
-                    }
-                    else {
-                        this.events.dndEvent.currentContainer.style.cursor = "nesw-resize";
-                    }
-                }
-                else {
-                    this.events.dndEvent.currentContainer.style.removeProperty("cursor");
-                }
-                //TODO: dont fire that if cursor is not near the border
-                this.setDraggedGridLine(isHorizontalBorder, isVerticalBorder, isTop, isLeft);
+                const { clientX, clientY } = e;
+                const { gridTemplate } = this.state;
+                this.events.onGridMouseMove({ clientX, clientY, gridTemplate });
             }
-        };
-        this.setDraggedGridLine = (isHorizontal, isVertical, isTop, isLeft) => {
-            const gridElement = this.events.dndEvent.currentElement;
-            if (!gridElement)
-                return;
-            let lineHorizontal = false;
-            let lineVertical = false;
-            if (isHorizontal) {
-                if (isLeft) {
-                    lineHorizontal = gridElement.column.start - 2;
-                }
-                else {
-                    lineHorizontal = gridElement.column.end - 2;
-                }
-            }
-            if (isVertical) {
-                if (isTop) {
-                    lineVertical = gridElement.row.start - 2;
-                }
-                else {
-                    lineVertical = gridElement.row.end - 2;
-                }
-            }
-            this.events.dndEvent.lineHorizontal = lineHorizontal;
-            this.events.dndEvent.lineVertical = lineVertical;
         };
         //TODO: make keybinding configurable
         this.onKeyUp = (e) => {
