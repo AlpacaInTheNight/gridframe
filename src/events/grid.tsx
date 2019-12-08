@@ -1,5 +1,5 @@
-import * as React from "react";
 import { GridUtils } from "../GridContainer/GridUtils";
+import GridManager from '../GridManager';
 
 export type DNDEvent = {
 	type: "inactive" | "grabber" | "resize" | "join" | "swap"
@@ -29,6 +29,8 @@ export default class GridEvents {
 	private static readonly GRID_MIN_SIZE = GridEvents.GRID_FR_SIZE * .025;
 	private static readonly RESIZE_TRIGGER_DISTANCE = 30;
 
+	private gridManager: GridManager;
+
 	private _dndEvent: DNDEvent = {
 		type: "inactive",
 		eventOriginPos: {
@@ -50,8 +52,8 @@ export default class GridEvents {
 		madeDNDSnapshot: false
 	};
 
-	constructor() {
-
+	constructor(gridManager: GridManager) {
+		this.gridManager = gridManager;
 	}
 
 	get dndEvent(): DNDEvent {
@@ -341,6 +343,60 @@ export default class GridEvents {
 
 		//TODO: dont fire that if cursor is not near the border
 		this.setDraggedGridLine(isHorizontalBorder, isVerticalBorder, isTop, isLeft);
+	}
+
+	public onCellResize = ({gridTemplate, clientX, clientY}: {
+		gridTemplate: IGridFrame.gridTemplate;
+		clientX: number;
+		clientY: number;
+	}) => {
+		const {gridHTMLContainer, flexFactor} = this.gridManager.workArea;
+
+		if(!gridHTMLContainer) return;
+		const {col: colFactor, row: rowFactor} = flexFactor;
+
+		function updateSize(cells: number[], cellsOrigin: number[], moved: number, lineNumber: number) {
+			let gridTemplateStyle = "";
+
+			const indexA = lineNumber;
+			const indexB = lineNumber + 1;
+
+			const newValueA = +(cellsOrigin[indexA] + moved).toFixed(3);
+			const newValueB = +(cellsOrigin[indexB] - moved).toFixed(3);
+
+			if(newValueA > GridEvents.GRID_MIN_SIZE && newValueB > GridEvents.GRID_MIN_SIZE) {
+				cells[indexA] = +(cellsOrigin[indexA] + moved).toFixed(3);
+				cells[indexB] = +(cellsOrigin[indexB] - moved).toFixed(3);
+			}
+
+			for(const cell of cells) {
+				gridTemplateStyle += cell + "fr ";
+			}
+
+			return gridTemplateStyle;
+		}
+
+		if(this.dndEvent.lineHorizontal !== false) {
+			const movedX = (clientX - this.dndEvent.eventOriginPos.clientX) * colFactor;
+
+			gridHTMLContainer.style.gridTemplateColumns = updateSize(
+				this.dndEvent.columnsClone,
+				gridTemplate.columns,
+				movedX,
+				this.dndEvent.lineHorizontal
+			);
+		}
+
+		if(this.dndEvent.lineVertical !== false) {
+			const movedY = (clientY - this.dndEvent.eventOriginPos.clientY) * rowFactor;
+
+			gridHTMLContainer.style.gridTemplateRows = updateSize(
+				this.dndEvent.rowsClone,
+				gridTemplate.rows,
+				movedY,
+				this.dndEvent.lineVertical
+			);
+		}
 	}
 
 	/* private clearDNDEvent = () => {

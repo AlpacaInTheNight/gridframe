@@ -63,12 +63,10 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
     private onUpdateGrid;
     private onGridMouseUp;
     private clearDNDState;
-    private checkContainersBreakpoints;
     private setContainersActualSizes;
     private onGridMouseDown;
     private onCellSplit;
     private setCellJoinDirection;
-    private onCellResize;
     private onDNDActiveMove;
     private onGridMouseMove;
     private onKeyUp;

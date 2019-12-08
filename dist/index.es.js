@@ -715,6 +715,21 @@ class GridManager {
             },
             allowGridResize: true,
         };
+        this.checkContainersBreakpoints = () => {
+            const { gridHTMLElements } = this.workArea;
+            gridHTMLElements && gridHTMLElements.forEach((container) => {
+                if (container.offsetWidth <= 210) {
+                    if (!container.classList.contains("slim")) {
+                        container.classList.add("slim");
+                    }
+                }
+                else if (container.classList.contains("slim")) {
+                    container.classList.remove("slim");
+                }
+                container.dataset.width = container.offsetWidth.toString();
+                container.dataset.height = container.offsetHeight.toString();
+            });
+        };
         const { config, components } = props;
         for (const componentId in components) {
             if (components[componentId].default) {
@@ -753,7 +768,7 @@ class GridManager {
 GridManager.DEFAULT_GRID_ID_PREFIX = "grid-";
 
 class GridEvents {
-    constructor() {
+    constructor(gridManager) {
         this._dndEvent = {
             type: "inactive",
             eventOriginPos: {
@@ -980,6 +995,35 @@ class GridEvents {
             //TODO: dont fire that if cursor is not near the border
             this.setDraggedGridLine(isHorizontalBorder, isVerticalBorder, isTop, isLeft);
         };
+        this.onCellResize = ({ gridTemplate, clientX, clientY }) => {
+            const { gridHTMLContainer, flexFactor } = this.gridManager.workArea;
+            if (!gridHTMLContainer)
+                return;
+            const { col: colFactor, row: rowFactor } = flexFactor;
+            function updateSize(cells, cellsOrigin, moved, lineNumber) {
+                let gridTemplateStyle = "";
+                const indexA = lineNumber;
+                const indexB = lineNumber + 1;
+                const newValueA = +(cellsOrigin[indexA] + moved).toFixed(3);
+                const newValueB = +(cellsOrigin[indexB] - moved).toFixed(3);
+                if (newValueA > GridEvents.GRID_MIN_SIZE && newValueB > GridEvents.GRID_MIN_SIZE) {
+                    cells[indexA] = +(cellsOrigin[indexA] + moved).toFixed(3);
+                    cells[indexB] = +(cellsOrigin[indexB] - moved).toFixed(3);
+                }
+                for (const cell of cells) {
+                    gridTemplateStyle += cell + "fr ";
+                }
+                return gridTemplateStyle;
+            }
+            if (this.dndEvent.lineHorizontal !== false) {
+                const movedX = (clientX - this.dndEvent.eventOriginPos.clientX) * colFactor;
+                gridHTMLContainer.style.gridTemplateColumns = updateSize(this.dndEvent.columnsClone, gridTemplate.columns, movedX, this.dndEvent.lineHorizontal);
+            }
+            if (this.dndEvent.lineVertical !== false) {
+                const movedY = (clientY - this.dndEvent.eventOriginPos.clientY) * rowFactor;
+                gridHTMLContainer.style.gridTemplateRows = updateSize(this.dndEvent.rowsClone, gridTemplate.rows, movedY, this.dndEvent.lineVertical);
+            }
+        };
         /* private clearDNDEvent = () => {
             this.dndEvent.lineHorizontal = false;
             this.dndEvent.lineVertical = false;
@@ -1015,6 +1059,7 @@ class GridEvents {
             this.dndEvent.lineHorizontal = lineHorizontal;
             this.dndEvent.lineVertical = lineVertical;
         };
+        this.gridManager = gridManager;
     }
     get dndEvent() {
         return this._dndEvent;
@@ -1210,21 +1255,22 @@ class GridFrame extends Component {
                 }
             });
         };
-        this.checkContainersBreakpoints = () => {
-            const { gridHTMLElements } = this.gridManager.workArea;
-            gridHTMLElements && gridHTMLElements.forEach((container) => {
-                if (container.offsetWidth <= 210) {
-                    if (!container.classList.contains("slim")) {
+        /* private checkContainersBreakpoints = () => {
+            const {gridHTMLElements} = this.gridManager.workArea;
+    
+            gridHTMLElements && gridHTMLElements.forEach( (container: HTMLElement) => {
+                if(container.offsetWidth <= 210) {
+                    if(!container.classList.contains("slim")) {
                         container.classList.add("slim");
                     }
-                }
-                else if (container.classList.contains("slim")) {
+                } else if(container.classList.contains("slim")) {
                     container.classList.remove("slim");
                 }
+    
                 container.dataset.width = container.offsetWidth.toString();
                 container.dataset.height = container.offsetHeight.toString();
             });
-        };
+        } */
         //TODO: rewrite this. I not sure it is needed at current state.
         this.setContainersActualSizes = () => {
             const { gridHTMLContainer } = this.gridManager.workArea;
@@ -1275,36 +1321,6 @@ class GridFrame extends Component {
                 this.setState({ joinDirection: direction });
             }
         };
-        this.onCellResize = (clientX, clientY) => {
-            const { gridHTMLContainer, flexFactor } = this.gridManager.workArea;
-            if (!gridHTMLContainer)
-                return;
-            const { col: colFactor, row: rowFactor } = flexFactor;
-            function updateSize(cells, cellsOrigin, moved, lineNumber) {
-                let gridTemplate = "";
-                const indexA = lineNumber;
-                const indexB = lineNumber + 1;
-                const newValueA = +(cellsOrigin[indexA] + moved).toFixed(3);
-                const newValueB = +(cellsOrigin[indexB] - moved).toFixed(3);
-                if (newValueA > GridFrame.GRID_MIN_SIZE && newValueB > GridFrame.GRID_MIN_SIZE) {
-                    cells[indexA] = +(cellsOrigin[indexA] + moved).toFixed(3);
-                    cells[indexB] = +(cellsOrigin[indexB] - moved).toFixed(3);
-                }
-                for (const cell of cells) {
-                    gridTemplate += cell + "fr ";
-                }
-                return gridTemplate;
-            }
-            if (this.events.dndEvent.lineHorizontal !== false) {
-                const movedX = (clientX - this.events.dndEvent.eventOriginPos.clientX) * colFactor;
-                gridHTMLContainer.style.gridTemplateColumns = updateSize(this.events.dndEvent.columnsClone, this.state.gridTemplate.columns, movedX, this.events.dndEvent.lineHorizontal);
-            }
-            if (this.events.dndEvent.lineVertical !== false) {
-                const movedY = (clientY - this.events.dndEvent.eventOriginPos.clientY) * rowFactor;
-                gridHTMLContainer.style.gridTemplateRows = updateSize(this.events.dndEvent.rowsClone, this.state.gridTemplate.rows, movedY, this.events.dndEvent.lineVertical);
-            }
-            this.checkContainersBreakpoints();
-        };
         this.onDNDActiveMove = (e) => {
             const { pageX, pageY, clientX, clientY } = e;
             if (this.events.dndEvent.type === "grabber") {
@@ -1317,7 +1333,8 @@ class GridFrame extends Component {
                 this.setCellJoinDirection(movedVertical, movedHorizontal);
             }
             if (this.events.dndEvent.type === "resize") {
-                this.onCellResize(clientX, clientY);
+                this.events.onCellResize({ clientX, clientY, gridTemplate: this.state.gridTemplate });
+                this.gridManager.checkContainersBreakpoints();
             }
         };
         this.onGridMouseMove = (e) => {
@@ -1357,7 +1374,7 @@ class GridFrame extends Component {
             if (gridHTMLContainer) {
                 const selector = `#${gridAreaId} > .${classPrefix}container`;
                 this.gridManager.workArea.gridHTMLElements = document.querySelectorAll(selector);
-                this.checkContainersBreakpoints();
+                this.gridManager.checkContainersBreakpoints();
             }
         };
         this.getGridAreaStyle = () => {
@@ -1378,8 +1395,8 @@ class GridFrame extends Component {
             }
             return gridAreaStyle;
         };
-        this.events = new GridEvents();
         this.gridManager = new GridManager(props);
+        this.events = new GridEvents(this.gridManager);
         this.gridManager.workArea.gridAreaId = this.processGridId(this.props.gridId, this.gridManager.workArea.gridIdPrefix);
         GridFrame.EXEMPLARS.push({
             id: this.gridManager.workArea.gridAreaId,
@@ -1434,7 +1451,7 @@ class GridFrame extends Component {
         this.setContainersActualSizes();
         this.updateGridElementsList();
         const ro = new ResizeObserver((entries, observer) => {
-            this.checkContainersBreakpoints();
+            this.gridManager.checkContainersBreakpoints();
         });
         this.gridManager.workArea.gridHTMLContainer && ro.observe(this.gridManager.workArea.gridHTMLContainer);
         document.addEventListener("keyup", this.onKeyUp);

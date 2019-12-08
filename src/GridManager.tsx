@@ -66,4 +66,21 @@ export default class GridManager {
 	get workArea() {
 		return this._workArea;
 	}
+
+	public checkContainersBreakpoints = () => {
+		const {gridHTMLElements} = this.workArea;
+
+		gridHTMLElements && gridHTMLElements.forEach( (container: HTMLElement) => {
+			if(container.offsetWidth <= 210) {
+				if(!container.classList.contains("slim")) {
+					container.classList.add("slim");
+				}
+			} else if(container.classList.contains("slim")) {
+				container.classList.remove("slim");
+			}
+
+			container.dataset.width = container.offsetWidth.toString();
+			container.dataset.height = container.offsetHeight.toString();
+		});
+	}
 }

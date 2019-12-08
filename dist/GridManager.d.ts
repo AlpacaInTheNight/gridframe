@@ -7,5 +7,6 @@ export default class GridManager {
     private _workArea;
     constructor(props: Props);
     get workArea(): IGridFrame.workArea;
+    checkContainersBreakpoints: () => void;
 }
 export {};

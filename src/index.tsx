@@ -100,8 +100,8 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 	public constructor(props: GridFrameProps) {
 		super(props);
 
-		this.events = new GridEvents();
 		this.gridManager = new GridManager(props);
+		this.events = new GridEvents(this.gridManager);
 
 		this.gridManager.workArea.gridAreaId = this.processGridId(this.props.gridId, this.gridManager.workArea.gridIdPrefix);
 
@@ -225,7 +225,7 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 		this.updateGridElementsList();
 
 		const ro = new ResizeObserver((entries, observer) => {
-			this.checkContainersBreakpoints();
+			this.gridManager.checkContainersBreakpoints();
 		});
 
 		this.gridManager.workArea.gridHTMLContainer && ro.observe(this.gridManager.workArea.gridHTMLContainer);
@@ -446,7 +446,7 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 		});
 	}
 
-	private checkContainersBreakpoints = () => {
+	/* private checkContainersBreakpoints = () => {
 		const {gridHTMLElements} = this.gridManager.workArea;
 
 		gridHTMLElements && gridHTMLElements.forEach( (container: HTMLElement) => {
@@ -461,7 +461,7 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 			container.dataset.width = container.offsetWidth.toString();
 			container.dataset.height = container.offsetHeight.toString();
 		});
-	}
+	} */
 
 	//TODO: rewrite this. I not sure it is needed at current state.
 	private setContainersActualSizes = () => {
@@ -524,58 +524,6 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 		}
 	}
 
-	private onCellResize = (clientX: number, clientY: number) => {
-		const {gridHTMLContainer, flexFactor} = this.gridManager.workArea;
-
-		if(!gridHTMLContainer) return;
-		const {col: colFactor, row: rowFactor} = flexFactor;
-
-		function updateSize(cells: number[], cellsOrigin: number[], moved: number, lineNumber: number) {
-			let gridTemplate = "";
-
-			const indexA = lineNumber;
-			const indexB = lineNumber + 1;
-
-			const newValueA = +(cellsOrigin[indexA] + moved).toFixed(3);
-			const newValueB = +(cellsOrigin[indexB] - moved).toFixed(3);
-
-			if(newValueA > GridFrame.GRID_MIN_SIZE && newValueB > GridFrame.GRID_MIN_SIZE) {
-				cells[indexA] = +(cellsOrigin[indexA] + moved).toFixed(3);
-				cells[indexB] = +(cellsOrigin[indexB] - moved).toFixed(3);
-			}
-
-			for(const cell of cells) {
-				gridTemplate += cell + "fr ";
-			}
-
-			return gridTemplate;
-		}
-
-		if(this.events.dndEvent.lineHorizontal !== false) {
-			const movedX = (clientX - this.events.dndEvent.eventOriginPos.clientX) * colFactor;
-
-			gridHTMLContainer.style.gridTemplateColumns = updateSize(
-				this.events.dndEvent.columnsClone,
-				this.state.gridTemplate.columns,
-				movedX,
-				this.events.dndEvent.lineHorizontal
-			);
-		}
-
-		if(this.events.dndEvent.lineVertical !== false) {
-			const movedY = (clientY - this.events.dndEvent.eventOriginPos.clientY) * rowFactor;
-
-			gridHTMLContainer.style.gridTemplateRows = updateSize(
-				this.events.dndEvent.rowsClone,
-				this.state.gridTemplate.rows,
-				movedY,
-				this.events.dndEvent.lineVertical
-			);
-		}
-
-		this.checkContainersBreakpoints();
-	}
-
 	private onDNDActiveMove = (e: React.MouseEvent<HTMLElement>) => {
 		const {pageX, pageY, clientX, clientY} = e;
 
@@ -593,7 +541,9 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 		}
 
 		if(this.events.dndEvent.type === "resize") {
-			this.onCellResize(clientX, clientY);
+			this.events.onCellResize({clientX, clientY, gridTemplate: this.state.gridTemplate});
+
+			this.gridManager.checkContainersBreakpoints();
 		}
 		
 	}
@@ -642,7 +592,7 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 			const selector = `#${gridAreaId} > .${classPrefix}container`;
 			this.gridManager.workArea.gridHTMLElements = document.querySelectorAll(selector);
 
-			this.checkContainersBreakpoints();
+			this.gridManager.checkContainersBreakpoints();
 		}
 	}
 
