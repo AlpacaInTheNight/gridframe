@@ -1,8 +1,8 @@
 import GridManager from '../GridManager';
-import { TGridTemplate, TGridElement } from '../index';
+import { TGridTemplate, TGridElement, TEventOriginPos, TCellActionDirection, TSplitDirection } from '../index';
 export declare type DNDEvent = {
     type: "inactive" | "grabber" | "resize" | "join" | "swap";
-    eventOriginPos: IGridFrame.eventOriginPos;
+    eventOriginPos: TEventOriginPos;
     lineHorizontal: number | false;
     lineVertical: number | false;
     columnsClone: number[];
@@ -29,13 +29,13 @@ export default class GridEvents {
     onUpdateGrid: ({ gridTemplate, gridElements, joinDirection }: {
         gridTemplate: TGridTemplate;
         gridElements: TGridElement[];
-        joinDirection: IGridFrame.cellActionDirection;
+        joinDirection: TCellActionDirection;
     }) => false | {
         gridTemplate: TGridTemplate;
         gridElements: TGridElement[];
     };
     onCellSplit: ({ direction, gridTemplate, gridElements }: {
-        direction: IGridFrame.splitDirection;
+        direction: TSplitDirection;
         gridTemplate: TGridTemplate;
         gridElements: TGridElement[];
     }) => {

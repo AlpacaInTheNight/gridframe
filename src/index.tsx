@@ -18,11 +18,124 @@ interface GridFrameProps {
 	gridId: string;
 	template: TGridTemplate;
 	elements: TGridElement[];
-	components: IGridFrame.gridComponents;
-	config: Partial<IGridFrame.gridConfig>;
+	components: TGridComponents;
+	config: Partial<TGridConfig>;
 
 	onGridUpdate?: (update: GridFrameUpdate) => void;
 }
+
+export type TComponentDefaults = {
+	props?: {[key: string]: any};
+	observe?: {
+		adaptive?: TAdaptiveObserve;
+	};
+};
+
+export type TGridConfigKeybinds = {
+	hidePanels: TGridConfigKeybind;
+	lockGrid: TGridConfigKeybind;
+};
+
+export type TGridConfigKeybind = {
+	keyCode: number,
+	ctrl?: boolean,
+	alt?: boolean,
+	shift?: boolean
+};
+
+export type TGridComponents = {
+	[key: string]: TGridComponent;
+};
+
+export type TContextProps = {
+	gridElements: TGridElement[];
+	gridTemplate: TGridTemplate;
+	components: TGridComponents | undefined;
+	joinDirection: TCellActionDirection;
+	showPanel: boolean;
+	config: Partial<TGridConfig>;
+
+	clearDNDState: () => void;
+	setElementComponent: (areaId: string, elementId: number, componentId: string | false) => void;
+	getDndEvent: () => DNDEvent;
+	setDndEvent: (newDnDEvent: Partial<DNDEvent>) => void;
+	getWorkArea: () => TWorkArea;
+	setWorkArea: (newWorkArea: Partial<TWorkArea>) => void;
+	setDnDActive: (newStatus: boolean) => void;
+	setFrameElements: (newElements: TGridElement[]) => void;
+	changeComponentId: (elementId: number, componentId: string | false) => void;
+};
+
+export type TGridComponent = {
+	default?: boolean;
+	name?: string;
+	body: any;
+	props: {[key: string]: any};
+	gridProps?: {
+		components?: boolean;
+		elements?: boolean;
+		template?: boolean;
+	};
+	observe?: {
+		adaptive?: TAdaptiveObserve;
+	};
+	overflowVisible?: boolean;
+};
+
+export type TAdaptiveObserve = {
+	breakpoints?: TAdaptiveBreakpoint[];
+	watchOrientation?: boolean;
+	defaultBreakpoint?: string;
+	resizeTrackStep?: number | false;
+};
+
+export type TSizeDimensions = {
+	width?: number;
+	height?: number;
+};
+
+export type TOrientation = "landscape" | "portrait";
+
+export type TAdaptiveBreakpoint = {
+	name: string;
+	orientation?: TOrientation;
+	max?: TSizeDimensions;
+	min?: TSizeDimensions;
+};
+
+export type TCellActionDirection = "left" | "right" | "bottom" | "top" | "none";
+
+export type TSplitDirection = {
+	isSplit: boolean;
+	isHorizontal: boolean
+	isVertical: boolean
+};
+
+export type TEventOriginPos = {
+	clientX: number;
+	clientY: number;
+	pageX: number;
+	pageY: number;
+};
+
+export type TDefaultComponent = {
+	id: string;
+	container: TGridComponent;
+};
+
+export type TGridConfig = {
+	componentsDefaults: TComponentDefaults;
+	gridAreaClassName: string;
+	classPrefix: string;
+	idPrefix: string;
+	customStyling: boolean;
+	allowSubGrid: boolean;
+	isSubGrid: boolean;
+	keybinds: TGridConfigKeybinds;
+
+	hidePanel: boolean;
+	lockGrid: boolean;
+};
 
 export type TGridTemplate = {
 	columns: number[];
@@ -47,7 +160,7 @@ export interface GridFrameState {
 	gridElements: TGridElement[];
 
 	dndActive: boolean;
-	joinDirection: IGridFrame.cellActionDirection;
+	joinDirection: TCellActionDirection;
 
 	showPanel: boolean;
 }
@@ -80,7 +193,7 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 
 	private static EXEMPLARS: {id: string, exemplar: GridFrame}[] = [];
 
-	private gridFrameContext: IGridFrame.ContextProps;
+	private gridFrameContext: TContextProps;
 
 	private events: GridEvents;
 
@@ -219,7 +332,7 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 			components: this.props.components,
 			joinDirection: this.state.joinDirection,
 			showPanel: this.state.showPanel,
-			config: this.props.config as Partial<IGridFrame.gridConfig>,
+			config: this.props.config as Partial<TGridConfig>,
 
 			clearDNDState: this.clearDNDState,
 			setElementComponent: GridFrame.setElementComponent,
@@ -347,7 +460,7 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 		}
 
 		for(const element of this.state.gridElements) {
-			let component: IGridFrame.gridComponent | undefined = undefined;
+			let component: TGridComponent | undefined = undefined;
 			if(element.componentId && this.props.components) {
 				component = this.props.components[element.componentId];
 			} else if(defaultComponent) {
@@ -433,7 +546,7 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 		}
 	}
 
-	private onCellSplit = (direction: IGridFrame.splitDirection) => {
+	private onCellSplit = (direction: TSplitDirection) => {
 		if(!direction.isSplit || !this.events.dndEvent.currentElement) return;
 		const {gridTemplate, gridElements} = this.events.onCellSplit({
 			direction,

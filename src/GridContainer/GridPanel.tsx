@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { GridContext } from './GridContext';
+import { TContextProps } from '../index';
 import {  styleGridCellPanel, styleComponentSelector, styleSplit, styleJoin, styleSwap } from "./style";
 
 interface GridPanelProps {
@@ -15,8 +16,7 @@ export class GridPanel extends React.Component<GridPanelProps, GridPanelState> {
 
 	public static contextType = GridContext;
 
-	//@ts-ignore
-	public context: IGridFrame.ContextProps;
+	public context: TContextProps;
 
 	public constructor(props: GridPanelProps) {
 		super(props);

@@ -4,14 +4,20 @@ import { GridContainer } from "./GridContainer";
 import { styleGridCell, styleGridCellPanel, styleComponentSelector, styleSplit, styleJoin, styleSwap, styleOverlay } from "./style";
 import { GridContext } from './GridContext';
 import { GridPanel } from './GridPanel';
-import { TGridTemplate, TGridElement, TGridElementAxis } from '../index';
+import { TGridElement, TAdaptiveObserve, TDefaultComponent, TGridComponent, TContextProps } from '../index';
 
 type JoinStatus = "none" | "merge" | "expand";
 
 interface GridElementProps {
 	element: TGridElement;
-	component: IGridFrame.gridComponent | undefined;
+	component: TGridComponent | undefined;
 }
+
+type TDNDTransferData = {
+	gridId: string;
+	elementId: number;
+	componentId: string | false;
+};
 
 interface GridElementState {
 	
@@ -21,30 +27,71 @@ export class GridElement extends React.Component<GridElementProps, GridElementSt
 
 	public static contextType = GridContext;
 
-	public context: IGridFrame.ContextProps;
-
 	public static readonly SUBGRID_ID = "__subgrid";
 	public static readonly DND_DATATRANSFER_TYPE = "gridframednd";
 
-	//TODO: its not a constan. rename to snake case.
-	private static PREVENT_DND_PROPAGATION: boolean = false;
+	private static preventDNDPropagation: boolean = false;
 
-	/*private static defaultProps: Partial<GridElementProps> = {
-		config: {
-			customStyling: false
-		}
-	};*/
+	public context: TContextProps;
 
-	public constructor(props: GridElementProps) {
+	constructor(props: GridElementProps) {
 		super(props);
 
-		//const selectedComponent = props.element.componentId ? props.element.componentId : "";
-		//const component = this.context.components ? this.context.components[selectedComponent] : undefined;
+		this.state = {};
+	}
 
-		this.state = {
-			//selectedComponent,
-			//component
-		};
+	public render() {
+		const {targetOfDraggable} = this.context.getDndEvent();
+		const {defaultComponent, defaultAdaptiveObserve, classPrefix} = this.context.getWorkArea();
+		const {element} = this.props;
+
+		const cellStyle: React.CSSProperties = this.getCellStyle();
+		const htmlId = this.getHTMLId();
+		
+		const componentContainer = this.getComponentContainer(defaultComponent);
+		const adaptiveObserve = this.getAdaptiveObserve(defaultAdaptiveObserve, componentContainer);
+		const joinStatus = this.checkJoinStatus();
+
+		const addClass = targetOfDraggable && targetOfDraggable === element.id ? "dnd_drag" : "";
+
+		return (
+			<div
+				style={cellStyle}
+				key={"gridElement:" + element.id}
+				data-id={element.id}
+				className={classPrefix + "container " + addClass}
+				id={htmlId}
+				onMouseEnter={this.onGridContainerEnter}
+				onMouseLeave={this.onGridContainerLeave}
+				onMouseMove={this.onGridContainerMove}
+				onDragStart={this.onContainerDrag}
+				onDrop={this.onContainerDrop}
+				onDragOver={this.onDragOver}
+				draggable={true}
+			>
+				{joinStatus !== "none" &&
+					<this.showOverlay status={joinStatus} />
+				}
+
+				{this.context.showPanel &&
+					<GridPanel
+						elementId={element.id}
+						componentId={this.props.element.componentId || ""}
+					/>
+				}
+
+				{componentContainer &&
+					<GridContainer
+						body={componentContainer.body}
+						props={componentContainer.props}
+						containerId={element.id}
+						htmlContainerId={htmlId}
+						changeComponentId={this.context.changeComponentId}
+						adaptiveObserve={adaptiveObserve}
+					/>
+				}
+			</div>
+		);
 	}
 
 	/**
@@ -117,7 +164,7 @@ export class GridElement extends React.Component<GridElementProps, GridElementSt
 
 			return;
 		} else if(currentElement) {
-			const data: IGridFrame.dndTranserData = {
+			const data: TDNDTransferData = {
 				gridId: gridAreaId,
 				elementId: currentElement.id,
 				componentId: currentElement.componentId
@@ -127,13 +174,13 @@ export class GridElement extends React.Component<GridElementProps, GridElementSt
 				currentContainer.classList.add("dnd_snapshot");
 			}
 
-			GridElement.PREVENT_DND_PROPAGATION = false;
+			GridElement.preventDNDPropagation = false;
 			e.dataTransfer.setData(GridElement.DND_DATATRANSFER_TYPE, JSON.stringify(data));
 		}
 	}
 
 	private onContainerDrop = (e: React.DragEvent) => {
-		if(GridElement.PREVENT_DND_PROPAGATION) {
+		if(GridElement.preventDNDPropagation) {
 			this.context.clearDNDState();
 			return;
 		}
@@ -144,7 +191,7 @@ export class GridElement extends React.Component<GridElementProps, GridElementSt
 		if(!dataTransfer) return;
 		if(!currentElement) return;
 
-		const data: IGridFrame.dndTranserData = JSON.parse(dataTransfer);
+		const data: TDNDTransferData = JSON.parse(dataTransfer);
 		if(!data || !data.gridId || !Number.isInteger(data.elementId)) return;
 
 		const {gridAreaId} = this.context.getWorkArea();
@@ -152,7 +199,7 @@ export class GridElement extends React.Component<GridElementProps, GridElementSt
 		const targetId = Number(currentTarget.dataset.id);
 		const gridElements = this.context.gridElements;
 
-		GridElement.PREVENT_DND_PROPAGATION = true;
+		GridElement.preventDNDPropagation = true;
 		
 		if(data.gridId !== gridAreaId) {
 			const originComponentId = this.props.element.componentId;
@@ -202,9 +249,9 @@ export class GridElement extends React.Component<GridElementProps, GridElementSt
 		return cellStyle;
 	}
 
-	private getComponentContainer = (defaultComponent: IGridFrame.defaultComponent | false) => {
+	private getComponentContainer = (defaultComponent: TDefaultComponent | false) => {
 		const {element} = this.props;
-		let componentContainer: IGridFrame.gridComponent | undefined;
+		let componentContainer: TGridComponent | undefined;
 
 		if(element.componentId) {
 			if(this.context.components && this.context.components[element.componentId]) {
@@ -233,11 +280,11 @@ export class GridElement extends React.Component<GridElementProps, GridElementSt
 	}
 
 	private getAdaptiveObserve = (
-		defaultAdaptiveObserve: IGridFrame.adaptiveObserve,
-		componentContainer: IGridFrame.gridComponent | undefined
-		): IGridFrame.adaptiveObserve => {
+		defaultAdaptiveObserve: TAdaptiveObserve,
+		componentContainer: TGridComponent | undefined
+		): TAdaptiveObserve => {
 
-		let adaptiveObserve: IGridFrame.adaptiveObserve = {};
+		let adaptiveObserve: TAdaptiveObserve = {};
 
 		if(componentContainer && componentContainer.observe && componentContainer.observe.adaptive) {
 			adaptiveObserve = componentContainer.observe.adaptive;
@@ -312,59 +359,5 @@ export class GridElement extends React.Component<GridElementProps, GridElementSt
 				madeDNDSnapshot: true
 			});
 		}
-	}
-
-	public render() {
-		const {targetOfDraggable} = this.context.getDndEvent();
-		const {defaultComponent, defaultAdaptiveObserve, classPrefix} = this.context.getWorkArea();
-		const {element} = this.props;
-
-		const cellStyle: React.CSSProperties = this.getCellStyle();
-		const htmlId = this.getHTMLId();
-		
-		const componentContainer = this.getComponentContainer(defaultComponent);
-		const adaptiveObserve = this.getAdaptiveObserve(defaultAdaptiveObserve, componentContainer);
-		const joinStatus = this.checkJoinStatus();
-
-		const addClass = targetOfDraggable && targetOfDraggable === element.id ? "dnd_drag" : "";
-
-		return (
-			<div
-				style={cellStyle}
-				key={"gridElement:" + element.id}
-				data-id={element.id}
-				className={classPrefix + "container " + addClass}
-				id={htmlId}
-				onMouseEnter={this.onGridContainerEnter}
-				onMouseLeave={this.onGridContainerLeave}
-				onMouseMove={this.onGridContainerMove}
-				onDragStart={this.onContainerDrag}
-				onDrop={this.onContainerDrop}
-				onDragOver={this.onDragOver}
-				draggable={true}
-			>
-				{joinStatus !== "none" &&
-					<this.showOverlay status={joinStatus} />
-				}
-
-				{this.context.showPanel &&
-					<GridPanel
-						elementId={element.id}
-						componentId={this.props.element.componentId || ""}
-					/>
-				}
-
-				{componentContainer &&
-					<GridContainer
-						body={componentContainer.body}
-						props={componentContainer.props}
-						containerId={element.id}
-						htmlContainerId={htmlId}
-						changeComponentId={this.context.changeComponentId}
-						adaptiveObserve={adaptiveObserve}
-					/>
-				}
-			</div>
-		);
 	}
 }

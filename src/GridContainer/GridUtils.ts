@@ -1,4 +1,4 @@
-import { TGridTemplate, TGridElement } from '../index';
+import { TGridTemplate, TGridElement, TEventOriginPos, TCellActionDirection, TSplitDirection } from '../index';
 
 export class GridUtils {
 
@@ -7,7 +7,7 @@ export class GridUtils {
 	public static isTargedOfJoining = (
 		element: TGridElement,
 		currentElement: TGridElement | undefined,
-		direction: IGridFrame.cellActionDirection
+		direction: TCellActionDirection
 		): boolean => {
 
 		if(direction === "none" || !currentElement) return false;
@@ -49,7 +49,7 @@ export class GridUtils {
 	public static canJointSplit = (
 		gridElement: TGridElement,
 		currentElement: TGridElement | undefined,
-		direction: IGridFrame.cellActionDirection
+		direction: TCellActionDirection
 		): boolean => {
 
 		if(!direction || direction === "none" || !currentElement) return false;
@@ -75,7 +75,7 @@ export class GridUtils {
 	public static joinIsPossible = (
 		joinTargetElement: TGridElement,
 		currentElement: TGridElement | undefined,
-		direction: IGridFrame.cellActionDirection
+		direction: TCellActionDirection
 		): boolean => {
 
 		if(!direction || direction === "none") return false;
@@ -95,12 +95,10 @@ export class GridUtils {
 		return true;
 	}
 
-	public static checkSplitDirection = (pageX: number, pageY: number, eventOriginPos: IGridFrame.eventOriginPos) => {
-		//console.log("checkSplitDirection");
+	public static checkSplitDirection = (pageX: number, pageY: number, eventOriginPos: TEventOriginPos) => {
 		const {pageX: originPageX, pageY: originPageY} = eventOriginPos;
-		//console.log(originPageX, originPageY);
 		
-		const direction: IGridFrame.splitDirection = {
+		const direction: TSplitDirection = {
 			isSplit: false,
 			isHorizontal: false,
 			isVertical: false

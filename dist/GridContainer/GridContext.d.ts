@@ -1,2 +1,3 @@
 import * as React from "react";
-export declare const GridContext: React.Context<Partial<IGridFrame.ContextProps>>;
+import { TContextProps } from '../index';
+export declare const GridContext: React.Context<Partial<TContextProps>>;

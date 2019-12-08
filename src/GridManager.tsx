@@ -1,4 +1,4 @@
-import { TGridTemplate } from './index';
+import { TGridTemplate, TGridConfig, TDefaultComponent, TAdaptiveObserve, TGridComponents } from './index';
 
 export type TFlexFactor = {
 	col: number;
@@ -13,16 +13,16 @@ export type TWorkArea = {
 	
 	gridHTMLElements: NodeListOf<HTMLElement> | undefined;
 	gridHTMLContainer: HTMLElement | undefined;
-	defaultComponent: IGridFrame.defaultComponent | false;
-	defaultAdaptiveObserve: IGridFrame.adaptiveObserve;
+	defaultComponent: TDefaultComponent | false;
+	defaultAdaptiveObserve: TAdaptiveObserve;
 	flexFactor: TFlexFactor;
 
 	allowGridResize: boolean;
 };
 
 type Props = {
-	components: IGridFrame.gridComponents;
-	config: Partial<IGridFrame.gridConfig>;
+	components: TGridComponents;
+	config: Partial<TGridConfig>;
 };
 
 export default class GridManager {

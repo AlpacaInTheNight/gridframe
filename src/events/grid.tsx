@@ -1,10 +1,10 @@
 import { GridUtils } from "../GridContainer/GridUtils";
 import GridManager from '../GridManager';
-import { TGridTemplate, TGridElement, TGridElementAxis } from '../index';
+import { TGridTemplate, TGridElement, TGridElementAxis, TEventOriginPos, TCellActionDirection, TSplitDirection } from '../index';
 
 export type DNDEvent = {
 	type: "inactive" | "grabber" | "resize" | "join" | "swap"
-	eventOriginPos: IGridFrame.eventOriginPos;
+	eventOriginPos: TEventOriginPos;
 
 	lineHorizontal: number | false;
 	lineVertical: number | false;
@@ -71,7 +71,7 @@ export default class GridEvents {
 	public onUpdateGrid = ({gridTemplate, gridElements, joinDirection}: {
 		gridTemplate: TGridTemplate;
 		gridElements: TGridElement[];
-		joinDirection: IGridFrame.cellActionDirection;
+		joinDirection: TCellActionDirection;
 	}): {
 		gridTemplate: TGridTemplate;
 		gridElements: TGridElement[];
@@ -170,7 +170,7 @@ export default class GridEvents {
 	} */
 
 	public onCellSplit = ({direction, gridTemplate, gridElements}: {
-		direction: IGridFrame.splitDirection;
+		direction: TSplitDirection;
 		gridTemplate: TGridTemplate;
 		gridElements: TGridElement[];
 	}): {

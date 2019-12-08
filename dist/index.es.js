@@ -75,9 +75,7 @@ GridUtils.joinIsPossible = (joinTargetElement, currentElement, direction) => {
     return true;
 };
 GridUtils.checkSplitDirection = (pageX, pageY, eventOriginPos) => {
-    //console.log("checkSplitDirection");
     const { pageX: originPageX, pageY: originPageY } = eventOriginPos;
-    //console.log(originPageX, originPageY);
     const direction = {
         isSplit: false,
         isHorizontal: false,
@@ -446,11 +444,6 @@ class GridPanel extends Component {
 GridPanel.contextType = GridContext;
 
 class GridElement extends Component {
-    /*private static defaultProps: Partial<GridElementProps> = {
-        config: {
-            customStyling: false
-        }
-    };*/
     constructor(props) {
         super(props);
         /**
@@ -521,12 +514,12 @@ class GridElement extends Component {
                 if (currentContainer) {
                     currentContainer.classList.add("dnd_snapshot");
                 }
-                GridElement.PREVENT_DND_PROPAGATION = false;
+                GridElement.preventDNDPropagation = false;
                 e.dataTransfer.setData(GridElement.DND_DATATRANSFER_TYPE, JSON.stringify(data));
             }
         };
         this.onContainerDrop = (e) => {
-            if (GridElement.PREVENT_DND_PROPAGATION) {
+            if (GridElement.preventDNDPropagation) {
                 this.context.clearDNDState();
                 return;
             }
@@ -543,7 +536,7 @@ class GridElement extends Component {
             const currentTarget = e.currentTarget;
             const targetId = Number(currentTarget.dataset.id);
             const gridElements = this.context.gridElements;
-            GridElement.PREVENT_DND_PROPAGATION = true;
+            GridElement.preventDNDPropagation = true;
             if (data.gridId !== gridAreaId) {
                 const originComponentId = this.props.element.componentId;
                 const componentId = data.componentId ? data.componentId : false;
@@ -666,12 +659,7 @@ class GridElement extends Component {
                 });
             }
         };
-        //const selectedComponent = props.element.componentId ? props.element.componentId : "";
-        //const component = this.context.components ? this.context.components[selectedComponent] : undefined;
-        this.state = {
-        //selectedComponent,
-        //component
-        };
+        this.state = {};
     }
     render() {
         const { targetOfDraggable } = this.context.getDndEvent();
@@ -695,8 +683,7 @@ class GridElement extends Component {
 GridElement.contextType = GridContext;
 GridElement.SUBGRID_ID = "__subgrid";
 GridElement.DND_DATATRANSFER_TYPE = "gridframednd";
-//TODO: its not a constan. rename to snake case.
-GridElement.PREVENT_DND_PROPAGATION = false;
+GridElement.preventDNDPropagation = false;
 
 class GridManager {
     constructor(props) {

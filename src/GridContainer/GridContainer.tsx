@@ -1,4 +1,5 @@
 import * as React from "react";
+import { TAdaptiveObserve, TOrientation, TAdaptiveBreakpoint } from '../index';
 
 type Props = {
 	body: any;
@@ -6,14 +7,14 @@ type Props = {
 	containerId: number;
 	htmlContainerId: string;
 	changeComponentId: (elementId: number, componentId: string) => void;
-	adaptiveObserve: IGridFrame.adaptiveObserve;
+	adaptiveObserve: TAdaptiveObserve;
 };
 
 type State = {
 	width: number;
 	height: number;
 	breakpointName: string | false;
-	orientation: IGridFrame.orientation | false;
+	orientation: TOrientation | false;
 };
 
 export class GridContainer extends React.Component<Props, State> {
@@ -51,6 +52,42 @@ export class GridContainer extends React.Component<Props, State> {
 		);
 	}
 
+	public shouldComponentUpdate(nextProps: Props, nextState: State) {
+
+		//TODO: check if resizeObserver did change
+		this.observer && this.observer.disconnect();
+		this.addObserver();
+
+		if(this.props.body !== nextProps.body) return true;
+		
+		for (const index in nextState) {
+			if (nextState[index] !== this.state[index]) {
+				return true;
+			}
+		}
+		
+		//TODO: add recursive check
+		for (const index in nextProps) {
+			if (nextProps[index] !== this.props[index]) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+
+	public componentDidUpdate() {
+		this.processResize();
+	}
+
+	public componentDidMount() {
+		this.addObserver();
+	}
+
+	public componentWillUnmount() {
+		this.observer && this.observer.disconnect();
+	}
+
 	private processResize = () => {
 		const {resizeTrackStep, breakpoints: watchBreakpoints, watchOrientation} = this.props.adaptiveObserve;
 		const target = this.target;
@@ -58,8 +95,8 @@ export class GridContainer extends React.Component<Props, State> {
 
 		//TODO: replace this with default props
 		const responsiveStep: number | false = resizeTrackStep ? resizeTrackStep : false;
-		const breakpoints: IGridFrame.adaptiveBreakpoint[] | false = watchBreakpoints ? watchBreakpoints : false;
-		let orientation: IGridFrame.orientation | false = false;
+		const breakpoints: TAdaptiveBreakpoint[] | false = watchBreakpoints ? watchBreakpoints : false;
+		let orientation: TOrientation | false = false;
 
 		const newState: Partial<State> = {};
 		let width: number = Number(target.dataset.width);
@@ -157,7 +194,7 @@ export class GridContainer extends React.Component<Props, State> {
 		if(!target) return;
 		
 		const responsiveStep: number | false = resizeTrackStep ? resizeTrackStep : false;
-		const breakpoints: IGridFrame.adaptiveBreakpoint[] | false = watchBreakpoints ? watchBreakpoints : false;
+		const breakpoints: TAdaptiveBreakpoint[] | false = watchBreakpoints ? watchBreakpoints : false;
 
 		if(responsiveStep || breakpoints || watchOrientation) {
 			this.observer = new MutationObserver( mutations => mutations.forEach( mutation => {
@@ -169,41 +206,5 @@ export class GridContainer extends React.Component<Props, State> {
 			const config = { attributes: true, attributeOldValue: true, childList: false, characterData: false };
 			this.observer.observe(target, config);
 		}
-	}
-
-	public shouldComponentUpdate(nextProps: Props, nextState: State) {
-
-		//TODO: check if resizeObserver did change
-		this.observer && this.observer.disconnect();
-		this.addObserver();
-
-		if(this.props.body !== nextProps.body) return true;
-		
-		for (const index in nextState) {
-			if (nextState[index] !== this.state[index]) {
-				return true;
-			}
-		}
-		
-		//TODO: add recursive check
-		for (const index in nextProps) {
-			if (nextProps[index] !== this.props[index]) {
-				return true;
-			}
-		}
-		
-		return false;
-	}
-
-	public componentDidUpdate() {
-		this.processResize();
-	}
-
-	public componentDidMount() {
-		this.addObserver();
-	}
-
-	public componentWillUnmount() {
-		this.observer && this.observer.disconnect();
 	}
 }
