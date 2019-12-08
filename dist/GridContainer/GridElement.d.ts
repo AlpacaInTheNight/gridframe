@@ -1,6 +1,7 @@
 import * as React from 'react';
+import { TGridElement } from '../index';
 interface GridElementProps {
-    element: IGridFrame.gridElement;
+    element: TGridElement;
     component: IGridFrame.gridComponent | undefined;
 }
 interface GridElementState {

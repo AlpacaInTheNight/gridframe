@@ -1,4 +1,4 @@
-import GridFrame from './index';
+import { TGridTemplate } from './index';
 
 export type TFlexFactor = {
 	col: number;
@@ -105,7 +105,7 @@ export default class GridManager {
 	}
 
 	//TODO: rewrite this. I not sure it is needed at current state.
-	public setContainersActualSizes = (gridTemplate: IGridFrame.gridTemplate) => {
+	public setContainersActualSizes = (gridTemplate: TGridTemplate) => {
 		const {gridHTMLContainer} = this.workArea;
 		if(!gridHTMLContainer) return;
 

@@ -57,24 +57,6 @@ declare namespace IGridFrame {
 		[key: string]: gridComponent;
 	}
 
-	interface gridTemplate {
-		columns: number[];
-		rows: number[];
-	}
-
-	interface gridElementAxis {
-		start: number;
-		end: number;
-	}
-
-	interface gridElement {
-		column: gridElementAxis;
-		row: gridElementAxis;
-		id: number;
-		componentId: string | false;
-		props: {};
-	}
-
 	interface adaptiveObserve {
 		breakpoints?: adaptiveBreakpoint[];
 		watchOrientation?: boolean;
@@ -130,8 +112,8 @@ declare namespace IGridFrame {
 	}
 
 	interface ContextProps {
-		gridElements: IGridFrame.gridElement[];
-		gridTemplate: IGridFrame.gridTemplate;
+		gridElements: IGridFrame.TGridElement[];
+		gridTemplate: IGridFrame.TGridTemplate;
 		components: IGridFrame.gridComponents | undefined;
 		joinDirection: IGridFrame.cellActionDirection;
 		showPanel: boolean;
@@ -144,7 +126,7 @@ declare namespace IGridFrame {
 		getWorkArea: () => IGridFrame.workArea;
 		setWorkArea: (newWorkArea: Partial<IGridFrame.workArea>) => void;
 		setDnDActive: (newStatus: boolean) => void;
-		setFrameElements: (newElements: IGridFrame.gridElement[]) => void;
+		setFrameElements: (newElements: IGridFrame.TGridElement[]) => void;
 		changeComponentId: (elementId: number, componentId: string | false) => void;
 	}
 }

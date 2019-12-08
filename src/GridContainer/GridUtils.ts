@@ -1,11 +1,12 @@
+import { TGridTemplate, TGridElement } from '../index';
 
 export class GridUtils {
 
 	private static readonly DND_TRIGGER_DISTANCE = 40;
 
 	public static isTargedOfJoining = (
-		element: IGridFrame.gridElement,
-		currentElement: IGridFrame.gridElement | undefined,
+		element: TGridElement,
+		currentElement: TGridElement | undefined,
 		direction: IGridFrame.cellActionDirection
 		): boolean => {
 
@@ -46,8 +47,8 @@ export class GridUtils {
 	}
 
 	public static canJointSplit = (
-		gridElement: IGridFrame.gridElement,
-		currentElement: IGridFrame.gridElement | undefined,
+		gridElement: TGridElement,
+		currentElement: TGridElement | undefined,
 		direction: IGridFrame.cellActionDirection
 		): boolean => {
 
@@ -72,8 +73,8 @@ export class GridUtils {
 	}
 
 	public static joinIsPossible = (
-		joinTargetElement: IGridFrame.gridElement,
-		currentElement: IGridFrame.gridElement | undefined,
+		joinTargetElement: TGridElement,
+		currentElement: TGridElement | undefined,
 		direction: IGridFrame.cellActionDirection
 		): boolean => {
 
@@ -125,10 +126,10 @@ export class GridUtils {
 	 * Removes not used grid columns or rows
 	 */
 	public static normalizeGrid = (
-		gridElements: IGridFrame.gridElement[],
-		gridTemplate: IGridFrame.gridTemplate,
+		gridElements: TGridElement[],
+		gridTemplate: TGridTemplate,
 		gridFRSize: number
-		): IGridFrame.gridTemplate => {
+		): TGridTemplate => {
 
 		const columnsUsage: boolean[] = new Array(gridTemplate.columns.length).fill(false);
 		const rowsUsage: boolean[] = new Array(gridTemplate.rows.length).fill(false);

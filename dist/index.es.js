@@ -1392,10 +1392,6 @@ class GridFrame extends Component {
         return (createElement(GridContext.Provider, { value: this.gridFrameContext },
             createElement("div", { id: gridAreaId, className: className, style: gridContainerStyle, onMouseDown: this.onGridMouseDown, onMouseUp: this.onGridMouseUp, onMouseMove: this.onGridMouseMove }, this.renderGrid())));
     }
-    //TODO: remove this and add updation for the new props
-    UNSAFE_componentWillUpdate(newProps, newState) {
-        //console.log("Updating GridFrame");
-    }
     componentDidMount() {
         const { gridAreaId } = this.gridManager.workArea;
         this.gridManager.workArea.gridHTMLContainer = document.getElementById(gridAreaId) || undefined;

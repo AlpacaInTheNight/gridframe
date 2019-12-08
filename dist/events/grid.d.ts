@@ -1,4 +1,5 @@
 import GridManager from '../GridManager';
+import { TGridTemplate, TGridElement } from '../index';
 export declare type DNDEvent = {
     type: "inactive" | "grabber" | "resize" | "join" | "swap";
     eventOriginPos: IGridFrame.eventOriginPos;
@@ -8,8 +9,8 @@ export declare type DNDEvent = {
     rowsClone: number[];
     currentContainerRect: DOMRect | ClientRect | undefined;
     currentContainer: HTMLElement | undefined;
-    currentElement: IGridFrame.gridElement | undefined;
-    joinTargetElement: IGridFrame.gridElement | undefined;
+    currentElement: TGridElement | undefined;
+    joinTargetElement: TGridElement | undefined;
     targetOfDraggable: number | undefined;
     madeDNDSnapshot: boolean;
 };
@@ -26,28 +27,28 @@ export default class GridEvents {
     get dndEvent(): DNDEvent;
     setDndEvent: (newDnDEvent: Partial<DNDEvent>) => void;
     onUpdateGrid: ({ gridTemplate, gridElements, joinDirection }: {
-        gridTemplate: IGridFrame.gridTemplate;
-        gridElements: IGridFrame.gridElement[];
+        gridTemplate: TGridTemplate;
+        gridElements: TGridElement[];
         joinDirection: IGridFrame.cellActionDirection;
     }) => false | {
-        gridTemplate: IGridFrame.gridTemplate;
-        gridElements: IGridFrame.gridElement[];
+        gridTemplate: TGridTemplate;
+        gridElements: TGridElement[];
     };
     onCellSplit: ({ direction, gridTemplate, gridElements }: {
         direction: IGridFrame.splitDirection;
-        gridTemplate: IGridFrame.gridTemplate;
-        gridElements: IGridFrame.gridElement[];
+        gridTemplate: TGridTemplate;
+        gridElements: TGridElement[];
     }) => {
-        gridTemplate: IGridFrame.gridTemplate;
-        gridElements: IGridFrame.gridElement[];
+        gridTemplate: TGridTemplate;
+        gridElements: TGridElement[];
     };
     onGridMouseMove: ({ clientX, clientY, gridTemplate }: {
-        gridTemplate: IGridFrame.gridTemplate;
+        gridTemplate: TGridTemplate;
         clientX: number;
         clientY: number;
     }) => void;
     onCellResize: ({ gridTemplate, clientX, clientY }: {
-        gridTemplate: IGridFrame.gridTemplate;
+        gridTemplate: TGridTemplate;
         clientX: number;
         clientY: number;
     }) => void;

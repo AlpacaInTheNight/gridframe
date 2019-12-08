@@ -4,11 +4,12 @@ import { GridContainer } from "./GridContainer";
 import { styleGridCell, styleGridCellPanel, styleComponentSelector, styleSplit, styleJoin, styleSwap, styleOverlay } from "./style";
 import { GridContext } from './GridContext';
 import { GridPanel } from './GridPanel';
+import { TGridTemplate, TGridElement, TGridElementAxis } from '../index';
 
 type JoinStatus = "none" | "merge" | "expand";
 
 interface GridElementProps {
-	element: IGridFrame.gridElement;
+	element: TGridElement;
 	component: IGridFrame.gridComponent | undefined;
 }
 

@@ -1,19 +1,34 @@
 import * as React from "react";
 export interface GridFrameUpdate {
-    template: IGridFrame.gridTemplate;
-    elements: IGridFrame.gridElement[];
+    template: TGridTemplate;
+    elements: TGridElement[];
 }
 interface GridFrameProps {
     gridId: string;
-    template: IGridFrame.gridTemplate;
-    elements: IGridFrame.gridElement[];
+    template: TGridTemplate;
+    elements: TGridElement[];
     components: IGridFrame.gridComponents;
     config: Partial<IGridFrame.gridConfig>;
     onGridUpdate?: (update: GridFrameUpdate) => void;
 }
+export declare type TGridTemplate = {
+    columns: number[];
+    rows: number[];
+};
+export declare type TGridElementAxis = {
+    start: number;
+    end: number;
+};
+export declare type TGridElement = {
+    column: TGridElementAxis;
+    row: TGridElementAxis;
+    id: number;
+    componentId: string | false;
+    props: {};
+};
 export interface GridFrameState {
-    gridTemplate: IGridFrame.gridTemplate;
-    gridElements: IGridFrame.gridElement[];
+    gridTemplate: TGridTemplate;
+    gridElements: TGridElement[];
     dndActive: boolean;
     joinDirection: IGridFrame.cellActionDirection;
     showPanel: boolean;
@@ -29,11 +44,10 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
     private events;
     private gridManager;
     constructor(props: GridFrameProps);
-    static getFrameTemplate: (frameId: string) => false | IGridFrame.gridTemplate;
-    static getFrameElements: (frameId: string) => false | IGridFrame.gridElement[];
+    static getFrameTemplate: (frameId: string) => false | TGridTemplate;
+    static getFrameElements: (frameId: string) => false | TGridElement[];
     private static setElementComponent;
     render(): JSX.Element;
-    UNSAFE_componentWillUpdate(newProps: GridFrameProps, newState: GridFrameState): void;
     componentDidMount(): void;
     componentDidUpdate(): void;
     componentWillUnmount(): void;

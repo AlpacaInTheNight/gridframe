@@ -10,23 +10,41 @@ import GridManager, { TWorkArea } from './GridManager';
 import GridEvents, { DNDEvent } from './events/grid';
 
 export interface GridFrameUpdate {
-	template: IGridFrame.gridTemplate;
-	elements: IGridFrame.gridElement[];
+	template: TGridTemplate;
+	elements: TGridElement[];
 }
 
 interface GridFrameProps {
 	gridId: string;
-	template: IGridFrame.gridTemplate;
-	elements: IGridFrame.gridElement[];
+	template: TGridTemplate;
+	elements: TGridElement[];
 	components: IGridFrame.gridComponents;
 	config: Partial<IGridFrame.gridConfig>;
 
 	onGridUpdate?: (update: GridFrameUpdate) => void;
 }
 
+export type TGridTemplate = {
+	columns: number[];
+	rows: number[];
+};
+
+export type TGridElementAxis = {
+	start: number;
+	end: number;
+};
+
+export type TGridElement = {
+	column: TGridElementAxis;
+	row: TGridElementAxis;
+	id: number;
+	componentId: string | false;
+	props: {};
+};
+
 export interface GridFrameState {
-	gridTemplate: IGridFrame.gridTemplate;
-	gridElements: IGridFrame.gridElement[];
+	gridTemplate: TGridTemplate;
+	gridElements: TGridElement[];
 
 	dndActive: boolean;
 	joinDirection: IGridFrame.cellActionDirection;
@@ -164,11 +182,6 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 		);
 	}
 
-	//TODO: remove this and add updation for the new props
-	public UNSAFE_componentWillUpdate(newProps: GridFrameProps, newState: GridFrameState) {
-		//console.log("Updating GridFrame");
-	}
-
 	public componentDidMount() {
 		const {gridAreaId} = this.gridManager.workArea;
 		this.gridManager.workArea.gridHTMLContainer = document.getElementById(gridAreaId) || undefined;
@@ -220,7 +233,7 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 		};
 	}
 
-	private setFrameElements = (newElements: IGridFrame.gridElement[]) => {
+	private setFrameElements = (newElements: TGridElement[]) => {
 		this.setState({gridElements: newElements});
 		this.onUpdateGrid();
 	}

@@ -1,3 +1,4 @@
+import { TGridTemplate } from './index';
 export declare type TFlexFactor = {
     col: number;
     row: number;
@@ -24,6 +25,6 @@ export default class GridManager {
     constructor(props: Props);
     get workArea(): TWorkArea;
     checkContainersBreakpoints: () => void;
-    setContainersActualSizes: (gridTemplate: IGridFrame.gridTemplate) => void;
+    setContainersActualSizes: (gridTemplate: TGridTemplate) => void;
 }
 export {};

@@ -1,5 +1,6 @@
 import { GridUtils } from "../GridContainer/GridUtils";
 import GridManager from '../GridManager';
+import { TGridTemplate, TGridElement, TGridElementAxis } from '../index';
 
 export type DNDEvent = {
 	type: "inactive" | "grabber" | "resize" | "join" | "swap"
@@ -13,8 +14,8 @@ export type DNDEvent = {
 
 	currentContainerRect: DOMRect | ClientRect | undefined;
 	currentContainer: HTMLElement | undefined;
-	currentElement: IGridFrame.gridElement | undefined;
-	joinTargetElement: IGridFrame.gridElement | undefined;
+	currentElement: TGridElement | undefined;
+	joinTargetElement: TGridElement | undefined;
 
 	targetOfDraggable: number | undefined;
 	madeDNDSnapshot: boolean;
@@ -68,12 +69,12 @@ export default class GridEvents {
 	}
 
 	public onUpdateGrid = ({gridTemplate, gridElements, joinDirection}: {
-		gridTemplate: IGridFrame.gridTemplate;
-		gridElements: IGridFrame.gridElement[];
+		gridTemplate: TGridTemplate;
+		gridElements: TGridElement[];
 		joinDirection: IGridFrame.cellActionDirection;
 	}): {
-		gridTemplate: IGridFrame.gridTemplate;
-		gridElements: IGridFrame.gridElement[];
+		gridTemplate: TGridTemplate;
+		gridElements: TGridElement[];
 	} | false => {
 
 		const {dndEvent} = this;
@@ -90,7 +91,7 @@ export default class GridEvents {
 
 		} else if(dndEvent.type === "join" && dndEvent.joinTargetElement && dndEvent.currentElement) {
 			const joinTargedId = dndEvent.joinTargetElement.id;
-			const joinTarged: IGridFrame.gridElement = dndEvent.joinTargetElement;
+			const joinTarged: TGridElement = dndEvent.joinTargetElement;
 
 			//if joining splits the target - update its grid boundaries
 			if(GridUtils.canJointSplit(joinTarged, dndEvent.currentElement, joinDirection)) {
@@ -138,8 +139,8 @@ export default class GridEvents {
 			}
 
 			gridElements.some( element => {
-				if(element.id === (dndEvent.currentElement as IGridFrame.gridElement).id) {
-					element = dndEvent.currentElement as IGridFrame.gridElement;
+				if(element.id === (dndEvent.currentElement as TGridElement).id) {
+					element = dndEvent.currentElement as TGridElement;
 					return true;
 				}
 				return false;
@@ -170,18 +171,18 @@ export default class GridEvents {
 
 	public onCellSplit = ({direction, gridTemplate, gridElements}: {
 		direction: IGridFrame.splitDirection;
-		gridTemplate: IGridFrame.gridTemplate;
-		gridElements: IGridFrame.gridElement[];
+		gridTemplate: TGridTemplate;
+		gridElements: TGridElement[];
 	}): {
-		gridTemplate: IGridFrame.gridTemplate;
-		gridElements: IGridFrame.gridElement[];
+		gridTemplate: TGridTemplate;
+		gridElements: TGridElement[];
 	} => {
 		const {currentElement} = this.dndEvent;
 		if(!direction.isSplit || !currentElement) return {gridTemplate, gridElements};
 
 		const newElementAxis: {
-			column: IGridFrame.gridElementAxis;
-			row: IGridFrame.gridElementAxis;
+			column: TGridElementAxis;
+			row: TGridElementAxis;
 		} = {
 			column: {start: 1, end: 1},
 			row: {start: 1, end: 1},
@@ -193,10 +194,10 @@ export default class GridEvents {
 		});
 
 		function setNewElementAxis(
-			originElement: IGridFrame.gridElement,
+			originElement: TGridElement,
 			newElement: {
-				column: IGridFrame.gridElementAxis;
-				row: IGridFrame.gridElementAxis;
+				column: TGridElementAxis;
+				row: TGridElementAxis;
 			},
 			axisA: "column" | "row",
 			id: number
@@ -282,7 +283,7 @@ export default class GridEvents {
 	}
 
 	public onGridMouseMove = ({clientX, clientY, gridTemplate}: {
-		gridTemplate: IGridFrame.gridTemplate;
+		gridTemplate: TGridTemplate;
 		clientX: number;
 		clientY: number;
 	}) => {
@@ -346,7 +347,7 @@ export default class GridEvents {
 	}
 
 	public onCellResize = ({gridTemplate, clientX, clientY}: {
-		gridTemplate: IGridFrame.gridTemplate;
+		gridTemplate: TGridTemplate;
 		clientX: number;
 		clientY: number;
 	}) => {
