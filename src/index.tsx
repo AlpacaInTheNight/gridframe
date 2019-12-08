@@ -495,27 +495,10 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 		const flexFactorHorizontal = this.state.gridTemplate.columns.reduce((a, b) => a + b, 0) / container.offsetWidth;
 		const flexFactorVertical = this.state.gridTemplate.rows.reduce((a, b) => a + b, 0) / container.offsetHeight;
 
-		/*this.containersActualSizes = {
-			columns: [],
-			rows: [],
-			flexFactor: {
-				col: flexFactorHorizontal,
-				row: flexFactorVertical
-			}
-		};*/
-
 		this.workArea.flexFactor = {
 			col: flexFactorHorizontal,
 			row: flexFactorVertical
 		};
-
-		/*for(const col of this.state.gridTemplate.columns) {
-			this.containersActualSizes.columns.push( +(col / flexFactorHorizontal).toFixed(3) );
-		}
-
-		for(const row of this.state.gridTemplate.rows) {
-			this.containersActualSizes.rows.push( +(row / flexFactorVertical).toFixed(3) );
-		}*/
 	}
 
 	private onGridMouseDown = (e: React.MouseEvent<HTMLElement>) => {
