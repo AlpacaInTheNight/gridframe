@@ -1,5 +1,6 @@
+import * as React from "react";
 import GridManager from '../GridManager';
-import { TGridTemplate, TGridElement, TEventOriginPos, TCellActionDirection, TSplitDirection } from '../index';
+import GridFrame, { GridFrameState, TGridTemplate, TGridElement, TEventOriginPos, TCellActionDirection, TSplitDirection } from '../index';
 export declare type DNDEvent = {
     type: "inactive" | "grabber" | "resize" | "join" | "swap";
     eventOriginPos: TEventOriginPos;
@@ -21,11 +22,14 @@ export default class GridEvents {
     private static readonly GRID_FR_SIZE;
     private static readonly GRID_MIN_SIZE;
     private static readonly RESIZE_TRIGGER_DISTANCE;
+    private core;
     private gridManager;
     private _dndEvent;
-    constructor(gridManager: GridManager);
+    constructor(gridFrame: GridFrame, gridManager: GridManager);
     get dndEvent(): DNDEvent;
     setDndEvent: (newDnDEvent: Partial<DNDEvent>) => void;
+    clearDNDState: (newState?: false | Partial<GridFrameState> | undefined) => void;
+    onGridMouseUp: (e: React.MouseEvent<Element, MouseEvent>) => void;
     onUpdateGrid: ({ gridTemplate, gridElements, joinDirection }: {
         gridTemplate: TGridTemplate;
         gridElements: TGridElement[];
@@ -34,6 +38,7 @@ export default class GridEvents {
         gridTemplate: TGridTemplate;
         gridElements: TGridElement[];
     };
+    onGridMouseDown: (e: React.MouseEvent<HTMLElement, MouseEvent>) => void;
     onCellSplit: ({ direction, gridTemplate, gridElements }: {
         direction: TSplitDirection;
         gridTemplate: TGridTemplate;

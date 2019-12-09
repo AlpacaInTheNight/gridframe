@@ -14,7 +14,7 @@ export interface GridFrameUpdate {
 	elements: TGridElement[];
 }
 
-interface GridFrameProps {
+export type GridFrameProps = {
 	gridId: string;
 	template: TGridTemplate;
 	elements: TGridElement[];
@@ -22,7 +22,17 @@ interface GridFrameProps {
 	config: Partial<TGridConfig>;
 
 	onGridUpdate?: (update: GridFrameUpdate) => void;
-}
+};
+
+export type GridFrameState = {
+	gridTemplate: TGridTemplate;
+	gridElements: TGridElement[];
+
+	dndActive: boolean;
+	joinDirection: TCellActionDirection;
+
+	showPanel: boolean;
+};
 
 export type TComponentDefaults = {
 	props?: {[key: string]: any};
@@ -155,16 +165,6 @@ export type TGridElement = {
 	props: {};
 };
 
-export interface GridFrameState {
-	gridTemplate: TGridTemplate;
-	gridElements: TGridElement[];
-
-	dndActive: boolean;
-	joinDirection: TCellActionDirection;
-
-	showPanel: boolean;
-}
-
 export default class GridFrame extends React.Component<Partial<GridFrameProps>, GridFrameState> {
 
 	private static defaultProps: GridFrameProps = {
@@ -203,7 +203,7 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 		super(props);
 
 		this.gridManager = new GridManager(props);
-		this.events = new GridEvents(this.gridManager);
+		this.events = new GridEvents(this, this.gridManager);
 
 		this.gridManager.workArea.gridAreaId = this.processGridId(this.props.gridId, this.gridManager.workArea.gridIdPrefix);
 
@@ -267,6 +267,19 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 		});
 	}
 
+	/**
+	 * Sends grid state to hosting component on its change.
+	 */
+	public gridUpdateCallback = () => {
+		const {onGridUpdate} = this.props;
+		const {gridElements, gridTemplate} = this.state;
+
+		onGridUpdate && onGridUpdate({
+			template: gridTemplate,
+			elements: gridElements
+		});
+	}
+
 	public render() {
 		const {gridAreaClassName, classPrefix, gridAreaId} = this.gridManager.workArea;
 
@@ -285,8 +298,8 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 					id={gridAreaId}
 					className={className}
 					style={gridContainerStyle}
-					onMouseDown={this.onGridMouseDown}
-					onMouseUp={this.onGridMouseUp}
+					onMouseDown={this.events.onGridMouseDown}
+					onMouseUp={this.events.onGridMouseUp}
 					onMouseMove={this.onGridMouseMove}
 				>
 					{this.renderGrid()}
@@ -334,7 +347,7 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 			showPanel: this.state.showPanel,
 			config: this.props.config as Partial<TGridConfig>,
 
-			clearDNDState: this.clearDNDState,
+			clearDNDState: this.events.clearDNDState,
 			setElementComponent: GridFrame.setElementComponent,
 			getDndEvent: this.getDndEvent,
 			setDndEvent: this.setDndEvent,
@@ -348,7 +361,7 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 
 	private setFrameElements = (newElements: TGridElement[]) => {
 		this.setState({gridElements: newElements});
-		this.onUpdateGrid();
+		this.gridUpdateCallback();
 	}
 
 	private processGridId = (id: string | undefined, idPrefix: string | undefined): string => {
@@ -478,72 +491,6 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 		}
 
 		return elements;
-	}
-
-	/**
-	 * Sends grid state to hosting component on its change.
-	 */
-	private onUpdateGrid = () => {
-		const {onGridUpdate} = this.props;
-		const {gridElements, gridTemplate} = this.state;
-
-		onGridUpdate && onGridUpdate({
-			template: gridTemplate,
-			elements: gridElements
-		});
-	}
-
-	private onGridMouseUp = (e: React.MouseEvent) => {
-		if(this.events.dndEvent.type === "inactive") return;
-		const {joinDirection, gridElements, gridTemplate} = this.state;
-		const newGridState = this.events.onUpdateGrid({joinDirection, gridElements, gridTemplate});
-
-		this.onUpdateGrid();
-		this.clearDNDState(newGridState);
-	}
-
-	private clearDNDState = (newState?: Partial<GridFrameState> | false) => {
-		if(!newState) newState = {};
-
-		this.events.dndEvent.lineHorizontal = false;
-		this.events.dndEvent.lineVertical = false;
-
-		this.events.dndEvent.joinTargetElement = undefined;
-		this.events.dndEvent.targetOfDraggable = undefined;
-		this.events.dndEvent.madeDNDSnapshot = false;
-
-		this.events.dndEvent.type = "inactive";
-
-		if(this.state.dndActive) newState.dndActive = false;
-		if(this.state.joinDirection !== "none") newState.joinDirection = "none";
-
-		this.setState(newState as GridFrameState, () => {
-			if(this.events.dndEvent.currentContainer) {
-				this.events.dndEvent.currentContainerRect = this.events.dndEvent.currentContainer.getBoundingClientRect();
-			}
-		});
-	}
-
-	private onGridMouseDown = (e: React.MouseEvent<HTMLElement>) => {
-		const {allowGridResize} = this.gridManager.workArea;
-		if(!allowGridResize) return;
-
-		if(this.events.dndEvent.lineHorizontal !== false || this.events.dndEvent.lineVertical !== false) {
-
-			const {clientX, clientY, pageX, pageY} = e;
-
-			this.events.dndEvent.eventOriginPos = {
-				clientX, clientY, pageX, pageY
-			};
-
-			this.events.dndEvent.type = "resize";
-
-			this.gridManager.setContainersActualSizes(this.state.gridTemplate);
-			this.events.dndEvent.columnsClone = this.state.gridTemplate.columns.slice();
-			this.events.dndEvent.rowsClone = this.state.gridTemplate.rows.slice();
-
-			this.setState({dndActive: true});
-		}
 	}
 
 	private onCellSplit = (direction: TSplitDirection) => {

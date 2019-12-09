@@ -1,6 +1,16 @@
+import * as React from "react";
+
 import { GridUtils } from "../GridContainer/GridUtils";
 import GridManager from '../GridManager';
-import { TGridTemplate, TGridElement, TGridElementAxis, TEventOriginPos, TCellActionDirection, TSplitDirection } from '../index';
+import GridFrame, {
+	GridFrameState,
+	TGridTemplate,
+	TGridElement,
+	TGridElementAxis,
+	TEventOriginPos,
+	TCellActionDirection,
+	TSplitDirection
+} from '../index';
 
 export type DNDEvent = {
 	type: "inactive" | "grabber" | "resize" | "join" | "swap"
@@ -30,6 +40,7 @@ export default class GridEvents {
 	private static readonly GRID_MIN_SIZE = GridEvents.GRID_FR_SIZE * .025;
 	private static readonly RESIZE_TRIGGER_DISTANCE = 30;
 
+	private core: GridFrame;
 	private gridManager: GridManager;
 
 	private _dndEvent: DNDEvent = {
@@ -53,7 +64,8 @@ export default class GridEvents {
 		madeDNDSnapshot: false
 	};
 
-	constructor(gridManager: GridManager) {
+	constructor(gridFrame: GridFrame, gridManager: GridManager) {
+		this.core = gridFrame;
 		this.gridManager = gridManager;
 	}
 
@@ -68,6 +80,38 @@ export default class GridEvents {
 		}
 	}
 
+	public clearDNDState = (newState?: Partial<GridFrameState> | false) => {
+		if(!newState) newState = {};
+		const {dndEvent} = this;
+		const {dndActive, joinDirection} = this.core.state;
+
+		dndEvent.lineHorizontal = false;
+		dndEvent.lineVertical = false;
+		dndEvent.joinTargetElement = undefined;
+		dndEvent.targetOfDraggable = undefined;
+		dndEvent.madeDNDSnapshot = false;
+		dndEvent.type = "inactive";
+
+		if(dndActive) newState.dndActive = false;
+		if(joinDirection !== "none") newState.joinDirection = "none";
+
+		this.core.setState(newState as GridFrameState, () => {
+			if(dndEvent.currentContainer) {
+				dndEvent.currentContainerRect = dndEvent.currentContainer.getBoundingClientRect();
+			}
+		});
+	}
+
+	public onGridMouseUp = (e: React.MouseEvent) => {
+		const {dndEvent} = this;
+		if(dndEvent.type === "inactive") return;
+		const {joinDirection, gridElements, gridTemplate} = this.core.state;
+		const newGridState = this.onUpdateGrid({joinDirection, gridElements, gridTemplate});
+
+		this.core.gridUpdateCallback();
+		this.clearDNDState(newGridState);
+	}
+
 	public onUpdateGrid = ({gridTemplate, gridElements, joinDirection}: {
 		gridTemplate: TGridTemplate;
 		gridElements: TGridElement[];
@@ -76,7 +120,6 @@ export default class GridEvents {
 		gridTemplate: TGridTemplate;
 		gridElements: TGridElement[];
 	} | false => {
-
 		const {dndEvent} = this;
 
 		if(dndEvent.type === "inactive") return false;
@@ -152,6 +195,26 @@ export default class GridEvents {
 		}
 
 		return false;
+	}
+
+	public onGridMouseDown = (e: React.MouseEvent<HTMLElement>) => {
+		const {allowGridResize} = this.gridManager.workArea;
+		if(!allowGridResize) return;
+		const {gridTemplate} = this.core.state;
+		const {lineHorizontal, lineVertical} = this.dndEvent;
+
+		if(lineHorizontal !== false || lineVertical !== false) {
+
+			const {clientX, clientY, pageX, pageY} = e;
+			this.dndEvent.eventOriginPos = {clientX, clientY, pageX, pageY};
+			this.dndEvent.type = "resize";
+
+			this.gridManager.setContainersActualSizes(gridTemplate);
+			this.dndEvent.columnsClone = gridTemplate.columns.slice();
+			this.dndEvent.rowsClone = gridTemplate.rows.slice();
+
+			this.core.setState({dndActive: true});
+		}
 	}
 
 	public onCellSplit = ({direction, gridTemplate, gridElements}: {

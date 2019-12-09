@@ -765,7 +765,7 @@ class GridManager {
 GridManager.DEFAULT_GRID_ID_PREFIX = "grid-";
 
 class GridEvents {
-    constructor(gridManager) {
+    constructor(gridFrame, gridManager) {
         this._dndEvent = {
             type: "inactive",
             eventOriginPos: {
@@ -790,6 +790,36 @@ class GridEvents {
                 if (this.dndEvent.hasOwnProperty(item))
                     this.dndEvent[item] = newDnDEvent[item];
             }
+        };
+        this.clearDNDState = (newState) => {
+            if (!newState)
+                newState = {};
+            const { dndEvent } = this;
+            const { dndActive, joinDirection } = this.core.state;
+            dndEvent.lineHorizontal = false;
+            dndEvent.lineVertical = false;
+            dndEvent.joinTargetElement = undefined;
+            dndEvent.targetOfDraggable = undefined;
+            dndEvent.madeDNDSnapshot = false;
+            dndEvent.type = "inactive";
+            if (dndActive)
+                newState.dndActive = false;
+            if (joinDirection !== "none")
+                newState.joinDirection = "none";
+            this.core.setState(newState, () => {
+                if (dndEvent.currentContainer) {
+                    dndEvent.currentContainerRect = dndEvent.currentContainer.getBoundingClientRect();
+                }
+            });
+        };
+        this.onGridMouseUp = (e) => {
+            const { dndEvent } = this;
+            if (dndEvent.type === "inactive")
+                return;
+            const { joinDirection, gridElements, gridTemplate } = this.core.state;
+            const newGridState = this.onUpdateGrid({ joinDirection, gridElements, gridTemplate });
+            this.core.gridUpdateCallback();
+            this.clearDNDState(newGridState);
         };
         this.onUpdateGrid = ({ gridTemplate, gridElements, joinDirection }) => {
             const { dndEvent } = this;
@@ -857,6 +887,22 @@ class GridEvents {
                 return { gridTemplate, gridElements };
             }
             return false;
+        };
+        this.onGridMouseDown = (e) => {
+            const { allowGridResize } = this.gridManager.workArea;
+            if (!allowGridResize)
+                return;
+            const { gridTemplate } = this.core.state;
+            const { lineHorizontal, lineVertical } = this.dndEvent;
+            if (lineHorizontal !== false || lineVertical !== false) {
+                const { clientX, clientY, pageX, pageY } = e;
+                this.dndEvent.eventOriginPos = { clientX, clientY, pageX, pageY };
+                this.dndEvent.type = "resize";
+                this.gridManager.setContainersActualSizes(gridTemplate);
+                this.dndEvent.columnsClone = gridTemplate.columns.slice();
+                this.dndEvent.rowsClone = gridTemplate.rows.slice();
+                this.core.setState({ dndActive: true });
+            }
         };
         this.onCellSplit = ({ direction, gridTemplate, gridElements }) => {
             const { currentElement } = this.dndEvent;
@@ -1032,6 +1078,7 @@ class GridEvents {
             this.dndEvent.lineHorizontal = lineHorizontal;
             this.dndEvent.lineVertical = lineVertical;
         };
+        this.core = gridFrame;
         this.gridManager = gridManager;
     }
     get dndEvent() {
@@ -1048,6 +1095,17 @@ GridEvents.RESIZE_TRIGGER_DISTANCE = 30;
 class GridFrame extends Component {
     constructor(props) {
         super(props);
+        /**
+         * Sends grid state to hosting component on its change.
+         */
+        this.gridUpdateCallback = () => {
+            const { onGridUpdate } = this.props;
+            const { gridElements, gridTemplate } = this.state;
+            onGridUpdate && onGridUpdate({
+                template: gridTemplate,
+                elements: gridElements
+            });
+        };
         this.setContext = () => {
             this.gridFrameContext = {
                 gridElements: this.state.gridElements,
@@ -1056,7 +1114,7 @@ class GridFrame extends Component {
                 joinDirection: this.state.joinDirection,
                 showPanel: this.state.showPanel,
                 config: this.props.config,
-                clearDNDState: this.clearDNDState,
+                clearDNDState: this.events.clearDNDState,
                 setElementComponent: GridFrame.setElementComponent,
                 getDndEvent: this.getDndEvent,
                 setDndEvent: this.setDndEvent,
@@ -1069,7 +1127,7 @@ class GridFrame extends Component {
         };
         this.setFrameElements = (newElements) => {
             this.setState({ gridElements: newElements });
-            this.onUpdateGrid();
+            this.gridUpdateCallback();
         };
         this.processGridId = (id, idPrefix) => {
             if (!id)
@@ -1175,60 +1233,6 @@ class GridFrame extends Component {
             }
             return elements;
         };
-        /**
-         * Sends grid state to hosting component on its change.
-         */
-        this.onUpdateGrid = () => {
-            const { onGridUpdate } = this.props;
-            const { gridElements, gridTemplate } = this.state;
-            onGridUpdate && onGridUpdate({
-                template: gridTemplate,
-                elements: gridElements
-            });
-        };
-        this.onGridMouseUp = (e) => {
-            if (this.events.dndEvent.type === "inactive")
-                return;
-            const { joinDirection, gridElements, gridTemplate } = this.state;
-            const newGridState = this.events.onUpdateGrid({ joinDirection, gridElements, gridTemplate });
-            this.onUpdateGrid();
-            this.clearDNDState(newGridState);
-        };
-        this.clearDNDState = (newState) => {
-            if (!newState)
-                newState = {};
-            this.events.dndEvent.lineHorizontal = false;
-            this.events.dndEvent.lineVertical = false;
-            this.events.dndEvent.joinTargetElement = undefined;
-            this.events.dndEvent.targetOfDraggable = undefined;
-            this.events.dndEvent.madeDNDSnapshot = false;
-            this.events.dndEvent.type = "inactive";
-            if (this.state.dndActive)
-                newState.dndActive = false;
-            if (this.state.joinDirection !== "none")
-                newState.joinDirection = "none";
-            this.setState(newState, () => {
-                if (this.events.dndEvent.currentContainer) {
-                    this.events.dndEvent.currentContainerRect = this.events.dndEvent.currentContainer.getBoundingClientRect();
-                }
-            });
-        };
-        this.onGridMouseDown = (e) => {
-            const { allowGridResize } = this.gridManager.workArea;
-            if (!allowGridResize)
-                return;
-            if (this.events.dndEvent.lineHorizontal !== false || this.events.dndEvent.lineVertical !== false) {
-                const { clientX, clientY, pageX, pageY } = e;
-                this.events.dndEvent.eventOriginPos = {
-                    clientX, clientY, pageX, pageY
-                };
-                this.events.dndEvent.type = "resize";
-                this.gridManager.setContainersActualSizes(this.state.gridTemplate);
-                this.events.dndEvent.columnsClone = this.state.gridTemplate.columns.slice();
-                this.events.dndEvent.rowsClone = this.state.gridTemplate.rows.slice();
-                this.setState({ dndActive: true });
-            }
-        };
         this.onCellSplit = (direction) => {
             if (!direction.isSplit || !this.events.dndEvent.currentElement)
                 return;
@@ -1326,7 +1330,7 @@ class GridFrame extends Component {
             return gridAreaStyle;
         };
         this.gridManager = new GridManager(props);
-        this.events = new GridEvents(this.gridManager);
+        this.events = new GridEvents(this, this.gridManager);
         this.gridManager.workArea.gridAreaId = this.processGridId(this.props.gridId, this.gridManager.workArea.gridIdPrefix);
         GridFrame.EXEMPLARS.push({
             id: this.gridManager.workArea.gridAreaId,
@@ -1351,7 +1355,7 @@ class GridFrame extends Component {
             className += " " + classPrefix + "frame_subgrid";
         }
         return (createElement(GridContext.Provider, { value: this.gridFrameContext },
-            createElement("div", { id: gridAreaId, className: className, style: gridContainerStyle, onMouseDown: this.onGridMouseDown, onMouseUp: this.onGridMouseUp, onMouseMove: this.onGridMouseMove }, this.renderGrid())));
+            createElement("div", { id: gridAreaId, className: className, style: gridContainerStyle, onMouseDown: this.events.onGridMouseDown, onMouseUp: this.events.onGridMouseUp, onMouseMove: this.onGridMouseMove }, this.renderGrid())));
     }
     componentDidMount() {
         const { gridAreaId } = this.gridManager.workArea;

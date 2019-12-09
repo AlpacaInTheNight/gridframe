@@ -5,14 +5,21 @@ export interface GridFrameUpdate {
     template: TGridTemplate;
     elements: TGridElement[];
 }
-interface GridFrameProps {
+export declare type GridFrameProps = {
     gridId: string;
     template: TGridTemplate;
     elements: TGridElement[];
     components: TGridComponents;
     config: Partial<TGridConfig>;
     onGridUpdate?: (update: GridFrameUpdate) => void;
-}
+};
+export declare type GridFrameState = {
+    gridTemplate: TGridTemplate;
+    gridElements: TGridElement[];
+    dndActive: boolean;
+    joinDirection: TCellActionDirection;
+    showPanel: boolean;
+};
 export declare type TComponentDefaults = {
     props?: {
         [key: string]: any;
@@ -128,13 +135,6 @@ export declare type TGridElement = {
     componentId: string | false;
     props: {};
 };
-export interface GridFrameState {
-    gridTemplate: TGridTemplate;
-    gridElements: TGridElement[];
-    dndActive: boolean;
-    joinDirection: TCellActionDirection;
-    showPanel: boolean;
-}
 export default class GridFrame extends React.Component<Partial<GridFrameProps>, GridFrameState> {
     private static defaultProps;
     /**
@@ -149,6 +149,10 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
     static getFrameTemplate: (frameId: string) => false | TGridTemplate;
     static getFrameElements: (frameId: string) => false | TGridElement[];
     private static setElementComponent;
+    /**
+     * Sends grid state to hosting component on its change.
+     */
+    gridUpdateCallback: () => void;
     render(): JSX.Element;
     componentDidMount(): void;
     componentDidUpdate(): void;
@@ -163,13 +167,6 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
     private setWorkArea;
     private changeComponentId;
     private renderGrid;
-    /**
-     * Sends grid state to hosting component on its change.
-     */
-    private onUpdateGrid;
-    private onGridMouseUp;
-    private clearDNDState;
-    private onGridMouseDown;
     private onCellSplit;
     private setCellJoinDirection;
     private onDNDActiveMove;
@@ -178,4 +175,3 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
     private updateGridElementsList;
     private getGridAreaStyle;
 }
-export {};
