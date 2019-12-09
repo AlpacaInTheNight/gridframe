@@ -7,7 +7,9 @@
  "scripts": {
   "test": "echo \"Error: no test specified\" && exit 1",
   "build": "rollup -c",
-  "watch": "rollup -cw"
+  "watch": "rollup -cw",
+  "watchdemo": "webpack-dev-server --colors",
+  "builddemo": "webpack --config webpack.config.js"
  },
  "author": {
   "name": "Peter Efremov",
@@ -16,6 +18,18 @@
  "license": "MIT",
  "devDependencies": {
   "@types/react": "^16.9.15",
+  "@types/react-dom": "^16.9.4",
+  "@types/webpack": "^4.4.32",
+  "@types/webpack-dev-server": "^3.1.6",
+  "@types/webpack-env": "^1.13.9",
+  "awesome-typescript-loader": "^5.2.1",
+  "source-map-loader": "^0.2.4",
+  "tslint-react": "^4.0.0",
+  "uglifyjs-webpack-plugin": "^2.1.2",
+  "webpack": "^4.30.0",
+  "webpack-bundle-analyzer": "^3.3.2",
+  "webpack-cli": "^3.3.1",
+  "webpack-dev-server": "^3.3.1",
   "rollup": "^1.27.4",
   "rollup-plugin-typescript2": "^0.25.2",
   "tslint": "^5.20.1",

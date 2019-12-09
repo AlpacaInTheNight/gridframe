@@ -18,6 +18,6 @@
 		"keyofStringsOnly": true,
 		"outDir": "./"
 	},
-	"include": ["src"],
+	"include": ["src", "demo/src"],
 	"exclude": ["node_modules", "**/__tests__/*"]
 }
