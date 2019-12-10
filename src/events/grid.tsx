@@ -217,6 +217,30 @@ export default class GridEvents {
 		}
 	}
 
+	public onGridMouseMove = (e: React.MouseEvent<HTMLElement>) => {
+		const {allowGridResize} = this.gridManager.workArea;
+		const {dndActive, gridTemplate} = this.core.state;
+		const {dndEvent} = this;
+
+		if(dndActive) {
+			this.core.onDNDActiveMove(e);
+		} else {
+			if(!dndEvent.currentContainerRect || !dndEvent.currentContainer || !dndEvent.currentElement) return;
+			if(!allowGridResize) return;
+
+			if( (e.target as HTMLElement).dataset.grabber ) {
+				dndEvent.currentContainer.style.removeProperty("cursor");
+				dndEvent.lineHorizontal = false;
+				dndEvent.lineVertical = false;
+				return;
+			}
+
+			const {clientX, clientY} = e;
+			this.processMouseMove({clientX, clientY, gridTemplate});
+		}
+
+	}
+
 	public onCellSplit = ({direction, gridTemplate, gridElements}: {
 		direction: TSplitDirection;
 		gridTemplate: TGridTemplate;
@@ -330,14 +354,12 @@ export default class GridEvents {
 		return {gridTemplate, gridElements};
 	}
 
-	public onGridMouseMove = ({clientX, clientY, gridTemplate}: {
+	public processMouseMove = ({clientX, clientY, gridTemplate}: {
 		gridTemplate: TGridTemplate;
 		clientX: number;
 		clientY: number;
 	}) => {
 		if(!this.dndEvent.currentContainerRect || !this.dndEvent.currentContainer || !this.dndEvent.currentElement) return;
-
-		//const {col: containerCol, row: containerRow} = this.currentContainer.dataset;
 		const colMax = gridTemplate.columns.length + 1;
 		const rowMax = gridTemplate.rows.length + 1;
 

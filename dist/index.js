@@ -909,6 +909,28 @@
 	                this.core.setState({ dndActive: true });
 	            }
 	        };
+	        this.onGridMouseMove = (e) => {
+	            const { allowGridResize } = this.gridManager.workArea;
+	            const { dndActive, gridTemplate } = this.core.state;
+	            const { dndEvent } = this;
+	            if (dndActive) {
+	                this.core.onDNDActiveMove(e);
+	            }
+	            else {
+	                if (!dndEvent.currentContainerRect || !dndEvent.currentContainer || !dndEvent.currentElement)
+	                    return;
+	                if (!allowGridResize)
+	                    return;
+	                if (e.target.dataset.grabber) {
+	                    dndEvent.currentContainer.style.removeProperty("cursor");
+	                    dndEvent.lineHorizontal = false;
+	                    dndEvent.lineVertical = false;
+	                    return;
+	                }
+	                const { clientX, clientY } = e;
+	                this.processMouseMove({ clientX, clientY, gridTemplate });
+	            }
+	        };
 	        this.onCellSplit = ({ direction, gridTemplate, gridElements }) => {
 	            const { currentElement } = this.dndEvent;
 	            if (!direction.isSplit || !currentElement)
@@ -979,10 +1001,9 @@
 	            });
 	            return { gridTemplate, gridElements };
 	        };
-	        this.onGridMouseMove = ({ clientX, clientY, gridTemplate }) => {
+	        this.processMouseMove = ({ clientX, clientY, gridTemplate }) => {
 	            if (!this.dndEvent.currentContainerRect || !this.dndEvent.currentContainer || !this.dndEvent.currentElement)
 	                return;
-	            //const {col: containerCol, row: containerRow} = this.currentContainer.dataset;
 	            const colMax = gridTemplate.columns.length + 1;
 	            const rowMax = gridTemplate.rows.length + 1;
 	            const colStart = this.dndEvent.currentElement.column.start - 1;
@@ -1276,27 +1297,6 @@
 	                this.gridManager.checkContainersBreakpoints();
 	            }
 	        };
-	        this.onGridMouseMove = (e) => {
-	            const { allowGridResize } = this.gridManager.workArea;
-	            if (this.state.dndActive) {
-	                this.onDNDActiveMove(e);
-	            }
-	            else {
-	                if (!this.events.dndEvent.currentContainerRect || !this.events.dndEvent.currentContainer || !this.events.dndEvent.currentElement)
-	                    return;
-	                if (!allowGridResize)
-	                    return;
-	                if (e.target.dataset.grabber) {
-	                    this.events.dndEvent.currentContainer.style.removeProperty("cursor");
-	                    this.events.dndEvent.lineHorizontal = false;
-	                    this.events.dndEvent.lineVertical = false;
-	                    return;
-	                }
-	                const { clientX, clientY } = e;
-	                const { gridTemplate } = this.state;
-	                this.events.onGridMouseMove({ clientX, clientY, gridTemplate });
-	            }
-	        };
 	        //TODO: make keybinding configurable
 	        this.onKeyUp = (e) => {
 	            if (e.keyCode === 73 && e.ctrlKey === true) {
@@ -1351,6 +1351,7 @@
 	        this.setContext();
 	    }
 	    render() {
+	        const { events } = this;
 	        const { gridAreaClassName, classPrefix, gridAreaId } = this.gridManager.workArea;
 	        //TODO: huh? should this be here?
 	        this.setContext();
@@ -1360,7 +1361,7 @@
 	            className += " " + classPrefix + "frame_subgrid";
 	        }
 	        return (React.createElement(GridContext.Provider, { value: this.gridFrameContext },
-	            React.createElement("div", { id: gridAreaId, className: className, style: gridContainerStyle, onMouseDown: this.events.onGridMouseDown, onMouseUp: this.events.onGridMouseUp, onMouseMove: this.onGridMouseMove }, this.renderGrid())));
+	            React.createElement("div", { id: gridAreaId, className: className, style: gridContainerStyle, onMouseDown: events.onGridMouseDown, onMouseUp: events.onGridMouseUp, onMouseMove: events.onGridMouseMove }, this.renderGrid())));
 	    }
 	    componentDidMount() {
 	        const { gridAreaId } = this.gridManager.workArea;

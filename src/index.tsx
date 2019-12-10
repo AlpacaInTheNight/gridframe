@@ -281,6 +281,7 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 	}
 
 	public render() {
+		const {events} = this;
 		const {gridAreaClassName, classPrefix, gridAreaId} = this.gridManager.workArea;
 
 		//TODO: huh? should this be here?
@@ -298,9 +299,9 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 					id={gridAreaId}
 					className={className}
 					style={gridContainerStyle}
-					onMouseDown={this.events.onGridMouseDown}
-					onMouseUp={this.events.onGridMouseUp}
-					onMouseMove={this.onGridMouseMove}
+					onMouseDown={events.onGridMouseDown}
+					onMouseUp={events.onGridMouseUp}
+					onMouseMove={events.onGridMouseMove}
 				>
 					{this.renderGrid()}
 				</div>
@@ -518,7 +519,7 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 		}
 	}
 
-	private onDNDActiveMove = (e: React.MouseEvent<HTMLElement>) => {
+	public onDNDActiveMove = (e: React.MouseEvent<HTMLElement>) => {
 		const {pageX, pageY, clientX, clientY} = e;
 
 		if(this.events.dndEvent.type === "grabber") {
@@ -540,29 +541,6 @@ export default class GridFrame extends React.Component<Partial<GridFrameProps>, 
 			this.gridManager.checkContainersBreakpoints();
 		}
 		
-	}
-
-	private onGridMouseMove = (e: React.MouseEvent<HTMLElement>) => {
-		const {allowGridResize} = this.gridManager.workArea;
-
-		if(this.state.dndActive) {
-			this.onDNDActiveMove(e);
-		} else {
-			if(!this.events.dndEvent.currentContainerRect || !this.events.dndEvent.currentContainer || !this.events.dndEvent.currentElement) return;
-			if(!allowGridResize) return;
-
-			if( (e.target as HTMLElement).dataset.grabber ) {
-				this.events.dndEvent.currentContainer.style.removeProperty("cursor");
-				this.events.dndEvent.lineHorizontal = false;
-				this.events.dndEvent.lineVertical = false;
-				return;
-			}
-
-			const {clientX, clientY} = e;
-			const {gridTemplate} = this.state;
-			this.events.onGridMouseMove({clientX, clientY, gridTemplate});
-		}
-
 	}
 
 	//TODO: make keybinding configurable

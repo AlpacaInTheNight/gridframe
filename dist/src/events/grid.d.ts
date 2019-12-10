@@ -39,6 +39,7 @@ export default class GridEvents {
         gridElements: TGridElement[];
     };
     onGridMouseDown: (e: React.MouseEvent<HTMLElement, MouseEvent>) => void;
+    onGridMouseMove: (e: React.MouseEvent<HTMLElement, MouseEvent>) => void;
     onCellSplit: ({ direction, gridTemplate, gridElements }: {
         direction: TSplitDirection;
         gridTemplate: TGridTemplate;
@@ -47,7 +48,7 @@ export default class GridEvents {
         gridTemplate: TGridTemplate;
         gridElements: TGridElement[];
     };
-    onGridMouseMove: ({ clientX, clientY, gridTemplate }: {
+    processMouseMove: ({ clientX, clientY, gridTemplate }: {
         gridTemplate: TGridTemplate;
         clientX: number;
         clientY: number;
