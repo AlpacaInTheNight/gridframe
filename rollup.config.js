@@ -5,7 +5,7 @@ export default {
 	input: 'src/index.tsx',
 	output: [
 		{
-			name: 'ContentResizer',
+			name: 'GridFrame',
 			file: pkg.main,
 			format: 'umd',
 		},
