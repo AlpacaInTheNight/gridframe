@@ -1,7 +1,7 @@
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('react'), require('resize-observer-polyfill')) :
 	typeof define === 'function' && define.amd ? define(['react', 'resize-observer-polyfill'], factory) :
-	(global = global || self, global.ContentResizer = factory(global.React, global.ResizeObserver));
+	(global = global || self, global.GridFrame = factory(global.React, global.ResizeObserver));
 }(this, (function (React, ResizeObserver) { 'use strict';
 
 	ResizeObserver = ResizeObserver && ResizeObserver.hasOwnProperty('default') ? ResizeObserver['default'] : ResizeObserver;
@@ -98,20 +98,15 @@
 	    }
 	    return direction;
 	};
-	/**
-	 * Removes not used grid columns or rows
-	 */
 	GridUtils.normalizeGrid = (gridElements, gridTemplate, gridFRSize) => {
 	    const columnsUsage = new Array(gridTemplate.columns.length).fill(false);
 	    const rowsUsage = new Array(gridTemplate.rows.length).fill(false);
 	    let largestColumn = gridFRSize;
 	    let largedRow = gridFRSize;
-	    //find grid lines that arent start of any grid element
 	    gridElements.forEach(element => {
 	        columnsUsage[element.column.start - 1] = true;
 	        rowsUsage[element.row.start - 1] = true;
 	    });
-	    //add size of not used columns/rows to the preceding used ones
 	    gridTemplate.columns.forEach((column, i) => {
 	        if (!columnsUsage[i + 1] && gridTemplate.columns[i + 1]) {
 	            gridTemplate.columns[i] = column + gridTemplate.columns[i + 1];
@@ -126,7 +121,6 @@
 	                largedRow = gridTemplate.rows[i];
 	        }
 	    });
-	    //adjusting cells fr size to use GridFrame.GRID_FR_SIZE constant as a largest value
 	    const ratioColumn = largestColumn / gridFRSize;
 	    const ratioRow = largedRow / gridFRSize;
 	    gridTemplate.columns.forEach((column, i) => {
@@ -135,10 +129,8 @@
 	    gridTemplate.rows.forEach((row, i) => {
 	        gridTemplate.rows[i] /= ratioRow;
 	    });
-	    //remove non used grid columns/rows
 	    gridTemplate.columns = gridTemplate.columns.filter((column, i) => columnsUsage[i]);
 	    gridTemplate.rows = gridTemplate.rows.filter((row, i) => rowsUsage[i]);
-	    //update grid elements to match the new grid template
 	    for (let index = 1; index <= columnsUsage.length; index++) {
 	        if (columnsUsage[index - 1])
 	            continue;
@@ -178,7 +170,6 @@
 	            const target = this.target;
 	            if (!target)
 	                return;
-	            //TODO: replace this with default props
 	            const responsiveStep = resizeTrackStep ? resizeTrackStep : false;
 	            const breakpoints = watchBreakpoints ? watchBreakpoints : false;
 	            let orientation = false;
@@ -260,7 +251,6 @@
 	            if (!this.props.adaptiveObserve)
 	                return;
 	            const { resizeTrackStep, breakpoints: watchBreakpoints, watchOrientation } = this.props.adaptiveObserve;
-	            //TODO: replace this with ref in render
 	            const target = document.getElementById(this.props.htmlContainerId);
 	            this.target = target;
 	            if (!target)
@@ -291,7 +281,6 @@
 	        return (React.createElement(CONTAINER, Object.assign({ width: this.state.width, height: this.state.height, breakpoint: this.state.breakpointName, orientation: this.state.orientation, changeComponentId: changeComponentId, containerId: containerId }, userProps)));
 	    }
 	    shouldComponentUpdate(nextProps, nextState) {
-	        //TODO: check if resizeObserver did change
 	        this.observer && this.observer.disconnect();
 	        this.addObserver();
 	        if (this.props.body !== nextProps.body)
@@ -301,7 +290,6 @@
 	                return true;
 	            }
 	        }
-	        //TODO: add recursive check
 	        for (const index in nextProps) {
 	            if (nextProps[index] !== this.props[index]) {
 	                return true;
@@ -323,9 +311,6 @@
 	const panelSize = 30;
 	const borderColor = "black";
 	const panelHeight = panelSize + "px";
-	/**
-	 * Бессмысленно и беспощадно
-	 */
 	const joinPNG = "url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADQAAAA0CAYAAADFeBvrAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoV2luZG93cykiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6MDY1REJFMUIwQjEzMTFFOTg4NTg4Njk3M0YzREVGRUQiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6MDY1REJFMUMwQjEzMTFFOTg4NTg4Njk3M0YzREVGRUQiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDowNjVEQkUxOTBCMTMxMUU5ODg1ODg2OTczRjNERUZFRCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDowNjVEQkUxQTBCMTMxMUU5ODg1ODg2OTczRjNERUZFRCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PmVsGaQAAADESURBVHja7NrLDoMwDERRxuL/f9ktXXTVIiWeBhddS+zI48RJlCCUmdudIrabBSBAgAABGg5JeTzVd8gQIECAAAECBMgb+/P4MVrmOK58LFS5zp/042t7zgyt+hCRK6dcdsM41lB2wrg2heyCeW0Kpg4NLdwJTK7MkCtTlkw7Qbq4/HvKyTCSMg5Kqf5okBlrfdEMU643GmJK9UdTzHQ7+8SB8ieYk35o5RriPgQIECBAgAAB+qMQ//oAAgQIEKAL4yHAACO0JW9gVjyHAAAAAElFTkSuQmCC')";
 	const splitPNG = "url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADQAAAA0CAYAAADFeBvrAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoV2luZG93cykiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6MjA2Qjk2OTUwQjEzMTFFOUJBN0U4MjlGQUU5OEZEMzUiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6MjA2Qjk2OTYwQjEzMTFFOUJBN0U4MjlGQUU5OEZEMzUiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDoyMDZCOTY5MzBCMTMxMUU5QkE3RTgyOUZBRTk4RkQzNSIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDoyMDZCOTY5NDBCMTMxMUU5QkE3RTgyOUZBRTk4RkQzNSIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PoSBc4oAAADJSURBVHja7NrdDkAwDIZh3+L+b7myEAfYpiaovE0c+Zlnm6qFzGz4U6ThZwEIECBAgNwhyfLWewwjBAgQIECAAAG6N8alDCntz6WJPBe88klfad91T7nt1Djxq2HeKRdh5cTOgiItA1kLFHFNy3ZJoYHxInXnM+FNFCnwyBx2Suro1a+FtlNOhZHSUzfTMT1VSgqKOjK1tK2omNqLVRExreJU0TBrUqgUlI+gnAWt+B4CBAgQIECAAAGa6yL+9QEECBAgQC/GJMAAbPEobZMQ1WoAAAAASUVORK5CYII=')";
 	const swapPNG = "url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADQAAAA0CAYAAADFeBvrAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoV2luZG93cykiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6QkZBRDcwN0MxMDEyMTFFOTk3MjA5RjU1RTVDRDQ1MDkiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6QkZBRDcwN0QxMDEyMTFFOTk3MjA5RjU1RTVDRDQ1MDkiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDpCRkFENzA3QTEwMTIxMUU5OTcyMDlGNTVFNUNENDUwOSIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDpCRkFENzA3QjEwMTIxMUU5OTcyMDlGNTVFNUNENDUwOSIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/Plkz14UAAADqSURBVHja7JlBDoMwDATZqv//8hahnioiSGI3CZpcEAQsRmuvsZDt7UnrtT1svXselhQq754te0idXc9XKBomKiYpV0qVChVOQ2AKAAEEEEB/s+1al2/Y18wKKfP+USmnJPgYoEL3731ZrWgKioSZxeUUBTOTbSsC5gjACL56Y82YTDNnr8cpRA0BBBBA9CH6EH2IGuqooYuJ1KVP/rvKf2P7bo1kKuSf49Ip54vzpYBceX1qIHfuN9daBpCD7xuqkIOVHGvbBWv2xT6NFSCAAAJomG1X953Gf0YoFAbUO7dkxWQEn319BBgArZlFZ5VBJxsAAAAASUVORK5CYII=')";
@@ -421,7 +406,6 @@
 	            }
 	            return options;
 	        };
-	        //TODO: remove this. need to use changeComponentId instead
 	        this.onChangeComponentId = (e) => {
 	            const componentId = e.target.value;
 	            const elementId = Number(e.target.dataset.id);
@@ -449,12 +433,6 @@
 	class GridElement extends React.Component {
 	    constructor(props) {
 	        super(props);
-	        /**
-	         * Resets currentContainer and currentElement if one of them was unset
-	         * TODO: that is extra load and probably not the best solution,
-	         * but is used to overcom issue when mouse move from one grid element to another
-	         * skiping the borders.
-	         */
 	        this.onGridContainerMove = (e) => {
 	            const { currentContainer, currentElement } = this.context.getDndEvent();
 	            if (!currentContainer || !currentElement) {
@@ -498,7 +476,6 @@
 	            const { gridAreaId } = this.context.getWorkArea();
 	            const elementId = this.getHTMLId();
 	            const target = e.target;
-	            //if the source of dnd is not this container
 	            if (!target.id || target.id !== elementId) {
 	                return;
 	            }
@@ -556,7 +533,6 @@
 	                }
 	                return false;
 	            });
-	            //drop event dont trigger mouse up event, so we need to trigger it manually
 	            this.context.clearDNDState();
 	            this.context.setFrameElements(gridElements);
 	        };
@@ -587,7 +563,6 @@
 	            else if (defaultComponent) {
 	                componentContainer = defaultComponent.container;
 	            }
-	            //TODO: I propbably dont need to send them via props, as I use context now. Need to rewrite it.
 	            if (componentContainer && componentContainer.gridProps) {
 	                if (componentContainer.gridProps.components) {
 	                    componentContainer.props.gridComponents = this.context.components;
@@ -720,7 +695,6 @@
 	                container.dataset.height = container.offsetHeight.toString();
 	            });
 	        };
-	        //TODO: rewrite this. I not sure it is needed at current state.
 	        this.setContainersActualSizes = (gridTemplate) => {
 	            const { gridHTMLContainer } = this.workArea;
 	            if (!gridHTMLContainer)
@@ -839,7 +813,6 @@
 	            else if (dndEvent.type === "join" && dndEvent.joinTargetElement && dndEvent.currentElement) {
 	                const joinTargedId = dndEvent.joinTargetElement.id;
 	                const joinTarged = dndEvent.joinTargetElement;
-	                //if joining splits the target - update its grid boundaries
 	                if (GridUtils.canJointSplit(joinTarged, dndEvent.currentElement, joinDirection)) {
 	                    switch (joinDirection) {
 	                        case "bottom":
@@ -861,12 +834,10 @@
 	                            }
 	                            break;
 	                    }
-	                    //if joining replaces target - remove it from the grid
 	                }
 	                else {
 	                    gridElements = gridElements.filter(element => element.id !== joinTargedId);
 	                }
-	                //update joining source element to the new grid boundaries
 	                switch (joinDirection) {
 	                    case "bottom":
 	                        dndEvent.currentElement.row.end = joinTarged.row.end;
@@ -950,7 +921,6 @@
 	                    start: originElement[axisB].start,
 	                    end: originElement[axisB].end
 	                };
-	                //if addition of new line is not required
 	                if (originElement[axisA].start + 1 !== originElement[axisA].end) {
 	                    newElement[axisA] = {
 	                        start: originElement[axisA].start + 1,
@@ -963,7 +933,6 @@
 	                        }
 	                        return false;
 	                    });
-	                    //if a new grid line is required to make a split
 	                }
 	                else {
 	                    const templateAxis = axisA === "column" ? gridTemplate.columns : gridTemplate.rows;
@@ -1047,7 +1016,6 @@
 	            else {
 	                this.dndEvent.currentContainer.style.removeProperty("cursor");
 	            }
-	            //TODO: dont fire that if cursor is not near the border
 	            this.setDraggedGridLine(isHorizontalBorder, isVerticalBorder, isTop, isLeft);
 	        };
 	        this.onCellResize = ({ gridTemplate, clientX, clientY }) => {
@@ -1111,9 +1079,6 @@
 	        return this._dndEvent;
 	    }
 	}
-	/**
-	 * Default grid cell size in fr units
-	 */
 	GridEvents.GRID_FR_SIZE = 1000;
 	GridEvents.GRID_MIN_SIZE = GridEvents.GRID_FR_SIZE * .025;
 	GridEvents.RESIZE_TRIGGER_DISTANCE = 30;
@@ -1121,9 +1086,6 @@
 	class GridFrame extends React.Component {
 	    constructor(props) {
 	        super(props);
-	        /**
-	         * Sends grid state to hosting component on its change.
-	         */
 	        this.gridUpdateCallback = () => {
 	            const { onGridUpdate } = this.props;
 	            const { gridElements, gridTemplate } = this.state;
@@ -1254,7 +1216,6 @@
 	                else if (defaultComponent) {
 	                    component = defaultComponent.container;
 	                }
-	                //move this methods to contex api
 	                elements.push(React.createElement(GridElement, { key: `${gridIdPrefix}cell-${element.id}`, element: element, component: component }));
 	            }
 	            return elements;
@@ -1297,7 +1258,6 @@
 	                this.gridManager.checkContainersBreakpoints();
 	            }
 	        };
-	        //TODO: make keybinding configurable
 	        this.onKeyUp = (e) => {
 	            if (e.keyCode === 73 && e.ctrlKey === true) {
 	                this.setState({
@@ -1353,7 +1313,6 @@
 	    render() {
 	        const { events } = this;
 	        const { gridAreaClassName, classPrefix, gridAreaId } = this.gridManager.workArea;
-	        //TODO: huh? should this be here?
 	        this.setContext();
 	        const gridContainerStyle = this.getGridAreaStyle();
 	        let className = gridAreaClassName;
@@ -1381,7 +1340,6 @@
 	        const { gridAreaId } = this.gridManager.workArea;
 	        document.removeEventListener("keyup", this.onKeyUp);
 	        GridFrame.USED_IDS = GridFrame.USED_IDS.filter(id => id !== gridAreaId);
-	        //TODO: check that it is deleted correctly
 	        GridFrame.EXEMPLARS = GridFrame.EXEMPLARS.filter(instance => instance.id !== gridAreaId);
 	    }
 	}
@@ -1403,9 +1361,6 @@
 	        lockGrid: false
 	    }
 	};
-	/**
-	 * Array of the used ids. Used to make sure that no grid areas with the same ids would be created.
-	 */
 	GridFrame.USED_IDS = [];
 	GridFrame.EXEMPLARS = [];
 	GridFrame.getFrameTemplate = (frameId) => {

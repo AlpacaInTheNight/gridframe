@@ -14,12 +14,6 @@ export declare class GridElement extends React.Component<GridElementProps, GridE
     context: TContextProps;
     constructor(props: GridElementProps);
     render(): JSX.Element;
-    /**
-     * Resets currentContainer and currentElement if one of them was unset
-     * TODO: that is extra load and probably not the best solution,
-     * but is used to overcom issue when mouse move from one grid element to another
-     * skiping the borders.
-     */
     private onGridContainerMove;
     private onGridContainerEnter;
     private onGridContainerLeave;

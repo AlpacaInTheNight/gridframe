@@ -10,14 +10,15 @@
 		"declaration": true,
 		"noImplicitAny": true,
 		"noImplicitUseStrict": false,
-		"removeComments": false,
+		"removeComments": true,
 		"noLib": false,
 		"preserveConstEnums": true,
 		"suppressImplicitAnyIndexErrors": true,
-		"strictNullChecks": true,
+		"strictNullChecks": false,
 		"keyofStringsOnly": true,
-		"outDir": "./"
+		"outDir": "./",
+		"strict": true
 	},
-	"include": ["src", "demo/src"],
+	"include": ["src"],
 	"exclude": ["node_modules", "**/__tests__/*"]
 }

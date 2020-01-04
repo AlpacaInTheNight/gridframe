@@ -1,9 +1,19 @@
 {
- "name": "grid-frame",
+ "name": "@alpacainthenight/gridframe",
  "version": "1.0.0",
  "description": "GridFrame",
  "main": "dist/index.js",
  "module": "dist/index.es.js",
+ "publishConfig": {
+  "registry": "https://npm.pkg.github.com/"
+ },
+ "files": [
+  "dist/*"
+ ],
+ "repository": {
+  "type": "git",
+  "url": "git+https://github.com/AlpacaInTheNight/gridframe.git"
+ },
  "scripts": {
   "test": "echo \"Error: no test specified\" && exit 1",
   "build": "rollup -c",
